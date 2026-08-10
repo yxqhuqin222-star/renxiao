@@ -12,6 +12,16 @@
 
 ## 线上部署
 
+### GitHub Pages 静态前端
+
+执行下面命令可以导出当前首页快照到 `docs/index.html`，用于 GitHub Pages：
+
+    .venv/bin/python scripts/export_static.py
+
+静态页适合公开查看前端仪表盘；上传、下载和重新计算仍需要 Flask 服务。
+
+### Vercel Flask 服务
+
 项目已按 Vercel Python/Flask 入口适配：
 
 - `app.py` 暴露顶层 `app = Flask(__name__)`
