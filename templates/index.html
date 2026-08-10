@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>人效、成本监控</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('favicon_asset', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('favicon_asset', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('favicon_asset', filename='favicon-16x16.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('favicon_asset', filename='favicon.ico') }}">
+  <link rel="manifest" href="{{ url_for('favicon_asset', filename='site.webmanifest') }}">
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --ink: #17202e;
+      --ink-muted: #596579;
+      --ink-soft: #8a95a8;
+      --line: #e5e9f0;
+      --line-strong: #d7dde8;
+      --primary: #315cf6;
+      --primary-hover: #2448cf;
+      --primary-soft: #edf2ff;
+      --success: #11834b;
+      --success-soft: #eaf7ef;
+      --warning: #b45309;
+      --warning-soft: #fff4e5;
+      --danger: #b42318;
+      --danger-soft: #fff0ee;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.07);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 9px;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: inherit; }
+    button, input, select { font: inherit; }
+    .page { max-width: 1240px; margin: 0 auto; padding: 36px 24px 64px; }
+    .skip-link {
+      position: absolute;
+      inset-block-start: 8px;
+      inset-inline-start: 8px;
+      transform: translateY(-140%);
+      background: var(--ink);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      z-index: 20;
+    }
+    .skip-link:focus { transform: none; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+    .topbar-main { min-width: 0; }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: none;
+    }
+    h1 { margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: 0; }
+    .subtitle { margin: 8px 0 0; color: var(--ink-muted); font-size: 14px; }
+    .latest-badge {
+      display: inline-flex;
+      min-height: 36px;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .card {
+      min-width: 0;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 20px 22px;
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .stack { display: grid; gap: 16px; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .section-title { margin: 0; font-size: 15px; font-weight: 760; }
+    .hint { color: var(--ink-soft); font-size: 12.5px; }
+    .status {
+      margin-bottom: 16px;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 650;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 14px 16px;
+    }
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 132px;
+    }
+    .field label, .field-label {
+      color: var(--ink-muted);
+      font-size: 12.5px;
+      font-weight: 680;
+    }
+    select, .text-select {
+      min-height: 42px;
+      width: 100%;
+      padding: 0 34px 0 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      background-color: #fff;
+      color: var(--ink);
+      font-size: 14px;
+    }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23596579' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    select:focus-visible, button:focus-visible, a:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+    .segmented {
+      display: inline-flex;
+      min-height: 42px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      background: #fff;
+      padding: 3px;
+      gap: 3px;
+    }
+    .segment {
+      min-height: 34px;
+      padding: 0 13px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+      font-weight: 680;
+    }
+    .segment[aria-pressed="true"] {
+      background: var(--primary);
+      color: #fff;
+    }
+    .custom-range {
+      display: none;
+      align-items: end;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+    }
+    .custom-range.is-visible { display: flex; }
+    .date-range-field { min-width: 330px; }
+    .mode-dropdown {
+      position: relative;
+      min-width: 190px;
+    }
+    .mode-dropdown summary {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      list-style: none;
+    }
+    .mode-dropdown summary::-webkit-details-marker { display: none; }
+    .mode-dropdown summary::after {
+      width: 14px;
+      height: 14px;
+      content: "";
+      flex: none;
+      background: center / 14px 14px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23596579' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    }
+    .mode-dropdown[open] summary {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(49, 92, 246, .12);
+    }
+    .mode-menu {
+      position: absolute;
+      z-index: 5;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 100%;
+      min-width: 210px;
+      padding: 8px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .mode-option {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 34px;
+      padding: 0 8px;
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mode-option:hover { background: var(--primary-soft); }
+    .mode-option input { width: 15px; height: 15px; accent-color: var(--primary); }
+    .mode-summary {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .range-sep {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--ink-soft);
+    }
+    .btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 720;
+      transition-property: transform, background-color, border-color, color, box-shadow;
+      transition-duration: .15s;
+    }
+    .btn:active { transform: scale(.96); }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(49, 92, 246, .24); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #fff; color: var(--ink-muted); border-color: var(--line-strong); }
+    .btn-secondary:hover { color: var(--ink); border-color: var(--ink-soft); }
+    .chart-card { padding-bottom: 22px; }
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .chart-title-wrap { min-width: 0; }
+    .chart-subtitle { margin-top: 4px; color: var(--ink-muted); font-size: 12.5px; }
+    .chart-controls {
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+    }
+    .chart-stat {
+      flex: none;
+      text-align: right;
+      color: var(--ink-muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-stat b {
+      display: block;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.2;
+    }
+    .chart-wrap {
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #fff 0%, var(--surface-soft) 100%);
+      overflow: hidden;
+    }
+    .chart-svg {
+      display: block;
+      width: 100%;
+      height: 300px;
+    }
+    .axis-text {
+      fill: var(--ink-muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .axis-label {
+      fill: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 680;
+    }
+    .grid-line { stroke: #e8edf5; stroke-width: 1; }
+    .axis-line { stroke: var(--line-strong); stroke-width: 1; }
+    .trend-line {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .trend-area { fill: rgba(49, 92, 246, .11); }
+    .trend-dot { fill: #fff; stroke: var(--primary); stroke-width: 2; }
+    .trend-hit {
+      fill: transparent;
+      cursor: pointer;
+    }
+    .trend-tooltip-box {
+      fill: #17202e;
+      filter: drop-shadow(0 8px 18px rgba(15, 23, 42, .18));
+    }
+    .trend-tooltip-value {
+      fill: #fff;
+      font-size: 15px;
+      font-weight: 760;
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-empty {
+      display: grid;
+      min-height: 300px;
+      place-items: center;
+      color: var(--ink-muted);
+      text-align: center;
+    }
+    .chart-empty[hidden] { display: none; }
+    .table-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .result-count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+    .result-count b { color: var(--ink); font-size: 16px; }
+    .table-wrap {
+      width: 100%;
+      overflow: auto;
+      max-width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--surface-soft);
+      color: var(--ink-muted);
+      font-size: 12.5px;
+      font-weight: 760;
+    }
+    th:nth-child(-n+3), td:nth-child(-n+3) { text-align: left; }
+    tbody tr:hover { background: var(--primary-soft); }
+    tbody tr:last-child td { border-bottom: 0; }
+    .num, .date-value { font-variant-numeric: tabular-nums; }
+    .pill {
+      display: inline-flex;
+      min-height: 23px;
+      align-items: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 720;
+    }
+    .mode { background: #f0f3f8; color: #5a6575; }
+    .x小学 { background: #e7f6ee; color: #14834d; }
+    .x初中 { background: #eaf1ff; color: #315cf6; }
+    .x高中 { background: #fff0e8; color: #c2410c; }
+    .empty {
+      padding: 42px 18px;
+      text-align: center;
+      color: var(--ink-muted);
+    }
+
+    @media (max-width: 860px) {
+      .page { padding: 24px 14px 48px; }
+      .topbar, .table-head, .section-head { align-items: stretch; flex-direction: column; }
+      .chart-head { align-items: stretch; flex-direction: column; }
+      .chart-stat { text-align: left; }
+      .topbar-actions { align-items: stretch; flex-direction: column-reverse; }
+      .controls { align-items: stretch; }
+      .field, .btn, .custom-range, .segmented { width: 100%; }
+      .date-range-field { min-width: 0; }
+      .segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .custom-range { flex-direction: column; align-items: stretch; }
+      .range-sep { min-height: 20px; }
+      h1 { font-size: 24px; }
+      select, .text-select { font-size: 16px; }
+    }
+
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#results">跳到结果表</a>
+  <main class="page">
+    <header class="topbar">
+      <div class="topbar-main">
+        <h1>人效、成本监控</h1>
+      </div>
+      <div class="topbar-actions">
+        <form action="{{ url_for('upload') }}" method="post">
+          <button class="btn btn-primary" type="submit">上传并更新</button>
+        </form>
+        <div class="latest-badge">最新：{{ latest_date or "暂无数据" }}</div>
+      </div>
+    </header>
+
+    {% if status %}
+      <div class="status" role="status">{{ status }}</div>
+    {% endif %}
+
+    <div class="stack">
+      <section class="card chart-card" aria-labelledby="trend-title">
+        <div class="chart-head">
+          <div class="chart-title-wrap">
+            <h2 class="section-title" id="trend-title">单例子结算成本变化曲线</h2>
+          </div>
+          <div class="chart-stat">
+            当前最后一天
+            <b id="trend-latest">-</b>
+          </div>
+        </div>
+        <form class="controls chart-controls js-range-form" action="{{ url_for('index') }}" method="get">
+          {% for item in chart_preserve_args %}
+            <input type="hidden" name="{{ item.name }}" value="{{ item.value }}">
+          {% endfor %}
+          <div class="field date-range-field">
+            <span class="field-label">日期范围</span>
+            <input type="hidden" name="chart_view" class="js-view-input" value="{{ chart_filters.view }}">
+            <div class="segmented" role="group" aria-label="曲线日期范围">
+              {% for value, label in [("latest", "最新一天"), ("all", "全部历史"), ("7d", "近 7 天"), ("custom", "自定义")] %}
+                <button class="segment" type="button" data-view="{{ value }}" aria-pressed="{{ 'true' if chart_filters.view == value else 'false' }}">{{ label }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="custom-range {{ 'is-visible' if chart_filters.view == 'custom' else '' }}">
+            <div class="field">
+              <label for="chart-start">开始日期</label>
+              <select id="chart-start" name="chart_start">
+                <option value="">开始</option>
+                {% for date in dates %}
+                  <option value="{{ date }}" {{ "selected" if chart_filters.start == date else "" }}>{{ date }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <span class="range-sep">至</span>
+            <div class="field">
+              <label for="chart-end">结束日期</label>
+              <select id="chart-end" name="chart_end">
+                <option value="">结束</option>
+                {% for date in dates %}
+                  <option value="{{ date }}" {{ "selected" if chart_filters.end == date else "" }}>{{ date }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">流转模式</span>
+            <details class="mode-dropdown js-mode-dropdown">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu">
+                {% for mode in modes %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="chart_mode" value="{{ mode }}" {{ "checked" if mode in chart_filters.modes else "" }}>
+                    <span>{{ mode }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
+          <button class="btn btn-primary" type="submit">查询</button>
+          <a class="btn btn-secondary" href="{{ chart_reset_url }}">重置</a>
+        </form>
+        <div class="chart-wrap" id="trend-chart" data-points='{{ trend|tojson }}'>
+          <svg class="chart-svg" role="img" aria-labelledby="trend-title" aria-describedby="trend-desc"></svg>
+          <div class="chart-empty" hidden>
+            <div>
+              <strong>暂无可绘制的曲线数据</strong><br>
+              需要先上传包含例子数的 tongshi 表并生成结果。
+            </div>
+          </div>
+          <span id="trend-desc" hidden>按日期展示单例子结算成本变化。</span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="filter-title">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title" id="filter-title">筛选</h2>
+          </div>
+        </div>
+        <form class="controls js-range-form" action="{{ url_for('index') }}" method="get">
+          {% for item in table_preserve_args %}
+            <input type="hidden" name="{{ item.name }}" value="{{ item.value }}">
+          {% endfor %}
+          <div class="field date-range-field">
+            <span class="field-label">日期范围</span>
+            <input type="hidden" name="table_view" class="js-view-input" value="{{ table_filters.view }}">
+            <div class="segmented" role="group" aria-label="明细日期范围">
+              {% for value, label in [("latest", "最新一天"), ("all", "全部历史"), ("7d", "近 7 天"), ("custom", "自定义")] %}
+                <button class="segment" type="button" data-view="{{ value }}" aria-pressed="{{ 'true' if table_filters.view == value else 'false' }}">{{ label }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="custom-range {{ 'is-visible' if table_filters.view == 'custom' else '' }}">
+            <div class="field">
+              <label for="table-start">开始日期</label>
+              <select id="table-start" name="table_start">
+                <option value="">开始</option>
+                {% for date in dates %}
+                  <option value="{{ date }}" {{ "selected" if table_filters.start == date else "" }}>{{ date }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <span class="range-sep">至</span>
+            <div class="field">
+              <label for="table-end">结束日期</label>
+              <select id="table-end" name="table_end">
+                <option value="">结束</option>
+                {% for date in dates %}
+                  <option value="{{ date }}" {{ "selected" if table_filters.end == date else "" }}>{{ date }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">流转模式</span>
+            <details class="mode-dropdown js-mode-dropdown">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu">
+                {% for mode in modes %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="table_mode" value="{{ mode }}" {{ "checked" if mode in table_filters.modes else "" }}>
+                    <span>{{ mode }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
+          <div class="field">
+            <label for="table-xuebu">学部</label>
+            <select id="table-xuebu" name="table_xuebu">
+              <option value="">全部</option>
+              {% for xuebu in xuebus %}
+                <option value="{{ xuebu }}" {{ "selected" if table_filters.xuebu == xuebu else "" }}>{{ xuebu }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit">查询</button>
+          <a class="btn btn-secondary" href="{{ table_reset_url }}">重置</a>
+        </form>
+      </section>
+
+      <section class="card" id="results" aria-labelledby="result-title">
+        <div class="table-head">
+          <div>
+            <h2 class="section-title" id="result-title">结果明细</h2>
+            <div class="result-count">共 <b>{{ rows|length }}</b> 行 <span>{{ view_label }}</span></div>
+          </div>
+          <a class="btn btn-secondary" href="{{ download_url }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            下载 result.xlsx
+          </a>
+        </div>
+        <div class="table-wrap">
+          {% if rows %}
+            <table>
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>流转模式</th>
+                  <th>学部</th>
+                  <th>人效</th>
+                  <th>线路成本</th>
+                  <th>单例子结算成本</th>
+                  <th>接通转化率</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                  <tr>
+                    <td class="date-value">{{ row["日期"] }}</td>
+                    <td><span class="pill mode">{{ row["流转模式"] }}</span></td>
+                    <td><span class="pill x{{ row['学部'] }}">{{ row["学部"] }}</span></td>
+                    <td class="num">{{ row["人效_display"] }}</td>
+                    <td class="num">{{ row["线路成本_display"] }}</td>
+                    <td class="num">{{ row["单例子结算成本_display"] }}</td>
+                    <td class="num">{{ row["接通转化率_display"] }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="empty">
+              <strong>没有符合条件的结果</strong><br>
+              调整筛选条件，或上传新的 tongshi 表和 zhuanhua 表。
+            </div>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    document.querySelectorAll(".js-range-form").forEach((form) => {
+      const viewInput = form.querySelector(".js-view-input");
+      const customRange = form.querySelector(".custom-range");
+      form.querySelectorAll(".segment").forEach((button) => {
+        button.addEventListener("click", () => {
+          viewInput.value = button.dataset.view;
+          form.querySelectorAll(".segment").forEach((item) => {
+            item.setAttribute("aria-pressed", item === button ? "true" : "false");
+          });
+          customRange.classList.toggle("is-visible", button.dataset.view === "custom");
+        });
+      });
+    });
+
+    document.querySelectorAll(".js-mode-dropdown").forEach((dropdown) => {
+      const summary = dropdown.querySelector(".mode-summary");
+      const inputs = Array.from(dropdown.querySelectorAll("input[type='checkbox']"));
+      const refresh = () => {
+        const selected = inputs.filter((input) => input.checked).map((input) => input.value);
+        summary.textContent = selected.length === 0 ? "全部" : selected.length <= 2 ? selected.join("、") : `已选 ${selected.length} 项`;
+      };
+      inputs.forEach((input) => input.addEventListener("change", refresh));
+      refresh();
+    });
+
+    document.addEventListener("click", (event) => {
+      document.querySelectorAll(".js-mode-dropdown[open]").forEach((dropdown) => {
+        if (!dropdown.contains(event.target)) {
+          dropdown.removeAttribute("open");
+        }
+      });
+    });
+
+    const chartBox = document.getElementById("trend-chart");
+    const chartSvg = chartBox.querySelector("svg");
+    const chartEmpty = chartBox.querySelector(".chart-empty");
+    const latestTrend = document.getElementById("trend-latest");
+    const points = JSON.parse(chartBox.dataset.points || "[]");
+    let activeTrendTooltip = null;
+
+    const hideTrendTooltip = () => {
+      if (activeTrendTooltip) {
+        activeTrendTooltip.remove();
+        activeTrendTooltip = null;
+      }
+    };
+
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) {
+        return;
+      }
+      if (target.closest(".trend-hit") || target.closest(".trend-tooltip")) {
+        return;
+      }
+      hideTrendTooltip();
+    });
+
+    function renderTrendChart() {
+      const width = chartBox.clientWidth || 800;
+      const height = 300;
+      const margin = { top: 24, right: 28, bottom: 48, left: 82 };
+      chartSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      hideTrendTooltip();
+      chartSvg.innerHTML = "";
+
+      if (!points.length) {
+        chartSvg.hidden = true;
+        chartEmpty.hidden = false;
+        latestTrend.textContent = "-";
+        return;
+      }
+
+      chartSvg.hidden = false;
+      chartEmpty.hidden = true;
+
+      const values = points.map((item) => Number(item["聚合单例子结算成本"] || 0));
+      const minValue = Math.min(...values);
+      const maxValue = Math.max(...values);
+      const pad = Math.max((maxValue - minValue) * 0.14, 1);
+      const yMin = Math.max(0, minValue - pad);
+      const yMax = maxValue + pad;
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+      const x = (index) => margin.left + (points.length === 1 ? innerW / 2 : (innerW * index) / (points.length - 1));
+      const y = (value) => margin.top + innerH - ((value - yMin) / (yMax - yMin || 1)) * innerH;
+      const make = (name, attrs = {}) => {
+        const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+        Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+        return node;
+      };
+      const showTooltip = (index, px, py) => {
+        hideTrendTooltip();
+        const item = points[index];
+        const value = Number(item["聚合单例子结算成本"] || 0).toFixed(1);
+        const group = make("g", { class: "trend-tooltip", "data-date": item["日期"], "data-value": value });
+        const boxW = 70;
+        const boxH = 34;
+        const boxX = Math.min(Math.max(px - boxW / 2, margin.left + 4), width - margin.right - boxW - 4);
+        const boxY = Math.max(py - boxH - 14, margin.top + 4);
+        group.appendChild(make("rect", { class: "trend-tooltip-box", x: boxX, y: boxY, width: boxW, height: boxH, rx: 8 }));
+        group.appendChild(make("text", { class: "trend-tooltip-value", x: boxX + boxW / 2, y: boxY + 22, "text-anchor": "middle" })).textContent = value;
+        chartSvg.appendChild(group);
+        activeTrendTooltip = group;
+      };
+
+      for (let i = 0; i <= 4; i += 1) {
+        const value = yMin + ((yMax - yMin) * i) / 4;
+        const gy = y(value);
+        chartSvg.appendChild(make("line", { class: "grid-line", x1: margin.left, x2: width - margin.right, y1: gy, y2: gy }));
+        chartSvg.appendChild(make("text", { class: "axis-text", x: margin.left - 10, y: gy + 4, "text-anchor": "end" })).textContent = value.toFixed(1);
+      }
+
+      chartSvg.appendChild(make("line", { class: "axis-line", x1: margin.left, x2: margin.left, y1: margin.top, y2: height - margin.bottom }));
+      chartSvg.appendChild(make("line", { class: "axis-line", x1: margin.left, x2: width - margin.right, y1: height - margin.bottom, y2: height - margin.bottom }));
+      chartSvg.appendChild(make("text", { class: "axis-label", x: 20, y: margin.top + innerH / 2, transform: `rotate(-90 20 ${margin.top + innerH / 2})`, "text-anchor": "middle" })).textContent = "单例子结算成本";
+      chartSvg.appendChild(make("text", { class: "axis-label", x: width - margin.right, y: height - 12, "text-anchor": "end" })).textContent = "日期";
+
+      const pathPoints = points.map((item, index) => [x(index), y(Number(item["聚合单例子结算成本"] || 0))]);
+      const linePath = pathPoints.map(([px, py], index) => `${index === 0 ? "M" : "L"} ${px.toFixed(2)} ${py.toFixed(2)}`).join(" ");
+      const areaPath = `${linePath} L ${pathPoints[pathPoints.length - 1][0].toFixed(2)} ${height - margin.bottom} L ${pathPoints[0][0].toFixed(2)} ${height - margin.bottom} Z`;
+      chartSvg.appendChild(make("path", { class: "trend-area", d: areaPath }));
+      chartSvg.appendChild(make("path", { class: "trend-line", d: linePath }));
+
+      pathPoints.forEach(([px, py], index) => {
+        chartSvg.appendChild(make("circle", { class: "trend-dot", cx: px, cy: py, r: 4 }));
+        const hit = make("circle", { class: "trend-hit", cx: px, cy: py, r: 14, tabindex: "0", role: "button", "aria-label": `${points[index]["日期"]} 单例子结算成本 ${Number(points[index]["聚合单例子结算成本"] || 0).toFixed(1)}` });
+        hit.addEventListener("click", () => showTooltip(index, px, py));
+        hit.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            showTooltip(index, px, py);
+          }
+        });
+        chartSvg.appendChild(hit);
+        if (points.length <= 6 || index === 0 || index === points.length - 1 || index % Math.ceil(points.length / 5) === 0) {
+          chartSvg.appendChild(make("text", { class: "axis-text", x: px, y: height - 25, "text-anchor": "middle" })).textContent = points[index]["日期"].slice(5);
+        }
+      });
+
+      const latest = points[points.length - 1];
+      latestTrend.textContent = Number(latest["聚合单例子结算成本"]).toFixed(1);
+    }
+
+    renderTrendChart();
+    window.addEventListener("resize", renderTrendChart);
+  </script>
+</body>
+</html>
