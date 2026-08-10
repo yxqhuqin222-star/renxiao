@@ -25,7 +25,7 @@
 项目已按 Vercel Python/Flask 入口适配：
 
 - `app.py` 暴露顶层 `app = Flask(__name__)`
-- `vercel.json` 将所有请求转给 Flask
+- Vercel 会自动识别 `app.py` 入口；`vercel.json` 只配置函数运行参数
 - Vercel 环境下会把随仓库发布的 `data/dashboard.db` 复制到 `/tmp/renxiao-data/dashboard.db` 作为运行数据
 
 注意：Vercel serverless 的 `/tmp` 不是长期持久数据库。线上页面可公开查看；如果要让多人长期上传并保存数据，应改接持久化数据库。
