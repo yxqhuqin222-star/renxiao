@@ -10,7 +10,14 @@
 
 打开 http://127.0.0.1:8000/。
 
-## 线上部署
+## 发布范围
+
+本项目不部署到 Vercel。
+
+当前只维护两类发布目标：
+
+- 本地 Flask 服务：用于上传、重新计算、下载和完整交互。
+- GitHub / GitHub Pages：用于保存代码和公开查看静态前端快照。
 
 ### GitHub Pages 静态前端
 
@@ -19,13 +26,3 @@
     .venv/bin/python scripts/export_static.py
 
 静态页适合公开查看前端仪表盘；上传、下载和重新计算仍需要 Flask 服务。
-
-### Vercel Flask 服务
-
-项目已按 Vercel Python/Flask 入口适配：
-
-- `app.py` 暴露顶层 `app = Flask(__name__)`
-- Vercel 会自动识别 `app.py` 入口；`vercel.json` 只配置函数运行参数
-- Vercel 环境下会把随仓库发布的 `data/dashboard.db` 复制到 `/tmp/renxiao-data/dashboard.db` 作为运行数据
-
-注意：Vercel serverless 的 `/tmp` 不是长期持久数据库。线上页面可公开查看；如果要让多人长期上传并保存数据，应改接持久化数据库。

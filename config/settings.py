@@ -30,7 +30,7 @@ ZHUANHUA_REQUIRED = {"日期", "流转模式", "人效", "接通转化率"}
 LABOR_COST_RULES = {
     "爆量算法池": 40.0,
     "9.9池": 90.0,
-    "爆量本地化": 0.0,
+    "爆量本地化": 50.0,
 }
 DSHEN_LABOR_NUMERATOR = 395.0
 DSHEN_LABOR_EXTRA = 7.0

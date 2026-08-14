@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 from urllib.parse import urlencode
 
 from flask import Flask, abort, redirect, render_template, request, send_file, send_from_directory, url_for
@@ -40,7 +41,7 @@ def _filters_from_request(prefix: str, include_xuebu: bool = False, default_view
         "modes": [mode for mode in request.values.getlist(f"{prefix}_mode") if mode],
     }
     if include_xuebu:
-        filters["xuebu"] = request.values.get(f"{prefix}_xuebu") or None
+        filters["xuebus"] = [xuebu for xuebu in request.values.getlist(f"{prefix}_xuebu") if xuebu]
     return filters
 
 
@@ -51,15 +52,15 @@ def _prefixed_args(prefix: str, filters: dict[str, object]) -> list[tuple[str, o
         (f"{prefix}_end", filters["end"] or ""),
     ]
     args.extend((f"{prefix}_mode", mode) for mode in filters["modes"])
-    if "xuebu" in filters:
-        args.append((f"{prefix}_xuebu", filters["xuebu"] or ""))
+    if "xuebus" in filters:
+        args.extend((f"{prefix}_xuebu", xuebu) for xuebu in filters["xuebus"])
     return args
 
 
 def _default_filters(include_xuebu: bool = False, view: str = "7d") -> dict[str, object]:
     filters: dict[str, object] = {"view": view, "start": None, "end": None, "modes": []}
     if include_xuebu:
-        filters["xuebu"] = None
+        filters["xuebus"] = []
     return filters
 
 
@@ -77,12 +78,15 @@ def _template_preserve_args(prefix: str, filters: dict[str, object]) -> list[dic
 
 
 def _legacy_filters_from_request() -> dict[str, object]:
+    xuebus = request.values.getlist("xuebu")
+    if not xuebus and request.values.get("xuebu"):
+        xuebus = [request.values.get("xuebu")]
     return {
         "view": request.values.get("view") or "latest",
         "start": request.values.get("start") or None,
         "end": request.values.get("end") or None,
         "modes": [mode for mode in request.values.getlist("mode") if mode],
-        "xuebu": request.values.get("xuebu") or None,
+        "xuebus": [xuebu for xuebu in xuebus if xuebu],
     }
 
 
@@ -171,7 +175,7 @@ def index():
         start=table_filters["start"],
         end=table_filters["end"],
         mode=table_filters["modes"],
-        xuebu=table_filters["xuebu"],
+        xuebu=table_filters["xuebus"],
     )
     trend = fetch_cost_trend(
         view=str(chart_filters["view"]),
@@ -236,7 +240,7 @@ def download():
         start=filters["start"],
         end=filters["end"],
         mode=filters["modes"],
-        xuebu=filters["xuebu"],
+        xuebu=filters["xuebus"],
     )
     return send_file(
         generate_result_xlsx(rows),
@@ -251,5 +255,34 @@ def health():
     return {"ok": True, "latest_date": latest_date()}
 
 
+def _local_lan_ipv4() -> str | None:
+    """Return the Mac's current LAN IPv4 address when a default route exists."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            ip = sock.getsockname()[0]
+    except OSError:
+        return None
+    return ip if ip and not ip.startswith("127.") else None
+
+
+def _print_startup_addresses() -> None:
+    host = S.HOST
+    port = S.PORT
+    print(f"开发服务器监听: {host}:{port}", flush=True)
+    print(f"本机访问地址: http://127.0.0.1:{port}", flush=True)
+    lan_ip = _local_lan_ipv4()
+    if lan_ip:
+        print(f"局域网访问地址: http://{lan_ip}:{port}", flush=True)
+    else:
+        print("局域网访问地址: 未检测到可用的局域网 IPv4 地址", flush=True)
+    print(
+        "如果同一 Wi-Fi 设备无法访问，请在 macOS 防火墙中允许 Python 接收入站连接，"
+        "或到 系统设置 > 网络 > 防火墙 > 选项 中允许本服务。",
+        flush=True,
+    )
+
+
 if __name__ == "__main__":
+    _print_startup_addresses()
     app.run(host=S.HOST, port=S.PORT, debug=False)

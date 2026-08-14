@@ -205,7 +205,7 @@ def fetch_filtered(
     start: str | None = None,
     end: str | None = None,
     mode: str | list[str] | tuple[str, ...] | None = None,
-    xuebu: str | None = None,
+    xuebu: str | list[str] | tuple[str, ...] | None = None,
 ) -> list[dict[str, Any]]:
     init_db()
     conn = sqlite3.connect(S.DB_PATH)
@@ -236,9 +236,10 @@ def fetch_filtered(
     if modes:
         where.append("流转模式 IN (" + ",".join("?" for _ in modes) + ")")
         params.extend(modes)
-    if xuebu and xuebu in S.XUBU_ORDER:
-        where.append("学部 = ?")
-        params.append(xuebu)
+    xuebus = _normalize_xuebus(xuebu)
+    if xuebus:
+        where.append("学部 IN (" + ",".join("?" for _ in xuebus) + ")")
+        params.extend(xuebus)
 
     sql = (
         "SELECT 日期, 流转模式, 学部, 人效, 线路成本, 单例子结算成本, 接通转化率, 单量 "
@@ -263,6 +264,16 @@ def _normalize_modes(mode: str | list[str] | tuple[str, ...] | None) -> list[str
     else:
         values = list(mode)
     return [item for item in (str(value).strip() for value in values) if item]
+
+
+def _normalize_xuebus(xuebu: str | list[str] | tuple[str, ...] | None) -> list[str]:
+    if xuebu is None:
+        return []
+    if isinstance(xuebu, str):
+        values = [xuebu]
+    else:
+        values = list(xuebu)
+    return [item for item in (str(value).strip() for value in values) if item in S.XUBU_ORDER]
 
 
 def _apply_date_filter(where: list[str], params: list[Any], view: str, start: str | None, end: str | None) -> None:
@@ -291,7 +302,7 @@ def fetch_cost_trend(
     start: str | None = None,
     end: str | None = None,
     mode: str | list[str] | tuple[str, ...] | None = None,
-    xuebu: str | None = None,
+    xuebu: str | list[str] | tuple[str, ...] | None = None,
 ) -> list[dict[str, Any]]:
     init_db()
     conn = sqlite3.connect(S.DB_PATH)
@@ -305,9 +316,10 @@ def fetch_cost_trend(
     if modes:
         where.append("流转模式 IN (" + ",".join("?" for _ in modes) + ")")
         params.extend(modes)
-    if xuebu and xuebu in S.XUBU_ORDER:
-        where.append("学部 = ?")
-        params.append(xuebu)
+    xuebus = _normalize_xuebus(xuebu)
+    if xuebus:
+        where.append("学部 IN (" + ",".join("?" for _ in xuebus) + ")")
+        params.extend(xuebus)
 
     sql = (
         "SELECT 日期, ROUND(SUM(单例子结算成本 * 单量) / SUM(单量), ?) AS 聚合单例子结算成本, SUM(单量) AS 总单量 "

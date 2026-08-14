@@ -13,7 +13,7 @@ ERR_LOG="$LOG_DIR/renxiao-local.err.log"
 usage() {
   cat <<EOF
 Usage: $0 <install|start|stop|restart|status|open|logs|uninstall>
-Stable URL: $URL
+本机访问地址: $URL
 EOF
 }
 ensure_project() { [[ -f "$APP" ]] || { echo "Project app not found: $APP" >&2; exit 1; }; }
@@ -63,6 +63,51 @@ wait_for_health() {
   done
   return 1
 }
+local_lan_ipv4() {
+  local iface ip
+  iface="$(route get default 2>/dev/null | awk '/interface:/{print $2; exit}')"
+  if [[ -n "${iface:-}" ]]; then
+    ip="$(ipconfig getifaddr "$iface" 2>/dev/null || true)"
+    if [[ -n "$ip" && "$ip" != 127.* ]]; then
+      echo "$ip"
+      return 0
+    fi
+  fi
+  ip="$(python3 - <<'PY' 2>/dev/null || true
+import socket
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip = s.getsockname()[0]
+    s.close()
+    if ip and not ip.startswith("127."):
+        print(ip)
+except OSError:
+    pass
+PY
+)"
+  [[ -n "$ip" ]] && echo "$ip"
+}
+print_access_addresses() {
+  local lan_ip
+  lan_ip="$(local_lan_ipv4 || true)"
+  echo "本机访问地址: $URL"
+  if [[ -n "$lan_ip" ]]; then
+    echo "局域网访问地址: http://$lan_ip:8000/"
+  else
+    echo "局域网访问地址: 未检测到可用的局域网 IPv4 地址"
+  fi
+}
+print_firewall_help() {
+  cat <<EOF
+
+如果同一 Wi-Fi 设备无法访问 8000 端口：
+1. 打开 系统设置 > 网络 > 防火墙 > 选项，允许 Python 或本服务接收入站连接。
+2. 或在终端执行：
+   sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add "$PYTHON"
+   sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$PYTHON"
+EOF
+}
 install_agent() { ensure_project; ensure_python; write_plist; launchctl_print && launchctl bootout "gui/$UID" "$PLIST" >/dev/null 2>&1 || true; stop_manual_project_process; launchctl bootstrap "gui/$UID" "$PLIST"; launchctl kickstart -k "gui/$UID/$LABEL"; wait_for_health; status; }
 start_agent() { ensure_project; ensure_python; [[ -f "$PLIST" ]] || write_plist; launchctl_print || { stop_manual_project_process; launchctl bootstrap "gui/$UID" "$PLIST"; }; launchctl kickstart -k "gui/$UID/$LABEL"; wait_for_health; status; }
 stop_agent() { launchctl_print && launchctl bootout "gui/$UID" "$PLIST" || echo "LaunchAgent is not loaded."; }
@@ -72,9 +117,18 @@ status() {
   launchctl_print && echo "Loaded: yes" || echo "Loaded: no"
   echo; echo "Port 8000:"; lsof -nP -iTCP:8000 -sTCP:LISTEN || true
   echo; echo "Health:"
-  if curl -fsS --max-time 5 "$HEALTH_URL"; then echo; echo "OK: $URL"; else echo; echo "Health check failed. Run: $0 logs" >&2; return 1; fi
+  if curl -fsS --max-time 5 "$HEALTH_URL"; then
+    echo
+    echo
+    print_access_addresses
+    print_firewall_help
+  else
+    echo
+    echo "Health check failed. Run: $0 logs" >&2
+    return 1
+  fi
 }
-open_dashboard() { status >/dev/null; open "$URL"; echo "$URL"; }
+open_dashboard() { status >/dev/null; open "$URL"; print_access_addresses; }
 show_logs() { echo "STDOUT: $OUT_LOG"; tail -n 80 "$OUT_LOG" 2>/dev/null || true; echo; echo "STDERR: $ERR_LOG"; tail -n 120 "$ERR_LOG" 2>/dev/null || true; }
 uninstall_agent() { stop_agent || true; rm -f "$PLIST"; echo "Removed: $PLIST"; }
 case "${1:-}" in

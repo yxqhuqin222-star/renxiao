@@ -595,13 +595,18 @@
             </details>
           </div>
           <div class="field">
-            <label for="table-xuebu">学部</label>
-            <select id="table-xuebu" name="table_xuebu">
-              <option value="">全部</option>
+            <span class="field-label">学部</span>
+            <details class="mode-dropdown js-mode-dropdown" id="table-xuebu">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu">
               {% for xuebu in xuebus %}
-                <option value="{{ xuebu }}" {{ "selected" if table_filters.xuebu == xuebu else "" }}>{{ xuebu }}</option>
+                <label class="mode-option">
+                  <input type="checkbox" name="table_xuebu" value="{{ xuebu }}" {{ "checked" if xuebu in table_filters.xuebus else "" }}>
+                  <span>{{ xuebu }}</span>
+                </label>
               {% endfor %}
-            </select>
+              </div>
+            </details>
           </div>
           <button class="btn btn-primary" type="submit">查询</button>
           <a class="btn btn-secondary" href="{{ table_reset_url }}">重置</a>

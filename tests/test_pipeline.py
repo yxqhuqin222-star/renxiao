@@ -13,10 +13,12 @@ class TestPipeline(unittest.TestCase):
         tongshi_rows = [
             {"日期": "2026-08-01", "模式": "大神", "学部": "小学", "例子数": 10, "话单分钟数": 100},
             {"日期": "2026-08-01", "模式": "爆量算法池", "学部": "高中", "例子数": 20, "话单分钟数": 80},
+            {"日期": "2026-08-01", "模式": "爆量本地化", "学部": "初中", "例子数": 10, "话单分钟数": 100},
         ]
         zhuanhua_rows = [
             {"日期": "2026-08-01", "流转模式": "大神", "人效": 5, "接通转化率": 0.01},
             {"日期": "2026-08-01", "流转模式": "爆量算法池", "人效": 8, "接通转化率": 0.02},
+            {"日期": "2026-08-01", "流转模式": "爆量本地化", "人效": 8, "接通转化率": 0.03},
         ]
 
         rows, skipped = pipeline.compute_result(tongshi_rows, zhuanhua_rows)
@@ -26,6 +28,7 @@ class TestPipeline(unittest.TestCase):
         self.assertAlmostEqual(by_key[("大神", "小学")][4], 0.85)
         self.assertAlmostEqual(by_key[("大神", "小学")][5], 86.85)
         self.assertAlmostEqual(by_key[("爆量算法池", "高中")][5], 40.34)
+        self.assertAlmostEqual(by_key[("爆量本地化", "初中")][5], 50.85)
 
     def test_fetch_filtered_latest_and_custom_range(self):
         original_db = S.DB_PATH
@@ -41,9 +44,11 @@ class TestPipeline(unittest.TestCase):
 
             latest = pipeline.fetch_filtered()
             custom = pipeline.fetch_filtered(view="custom", start="2026-08-01", end="2026-08-02")
+            xuebu_filtered = pipeline.fetch_filtered(view="all", xuebu=["小学", "初中"])
 
             self.assertEqual(["2026-08-02"], [row["日期"] for row in latest])
             self.assertEqual(["2026-08-02", "2026-08-01"], [row["日期"] for row in custom])
+            self.assertEqual(["初中", "小学"], sorted(row["学部"] for row in xuebu_filtered))
         S.DB_PATH = original_db
 
     def test_fetch_cost_trend_weights_selected_modes_by_examples(self):
