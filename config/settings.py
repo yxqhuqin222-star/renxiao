@@ -29,9 +29,11 @@ ZHUANHUA_REQUIRED = {"日期", "流转模式", "人效", "接通转化率"}
 
 LABOR_COST_RULES = {
     "爆量算法池": 40.0,
+    "爆量再植课": 40.0,
     "9.9池": 90.0,
     "爆量本地化": 50.0,
 }
+LINE_ONLY_COST_MODES = {"爆量未加微"}
 DSHEN_LABOR_NUMERATOR = 395.0
 DSHEN_LABOR_EXTRA = 7.0
 LINE_COST_UNIT = 0.085
@@ -39,7 +41,7 @@ COST_DECIMALS = 4
 
 XUBU_ORDER = {"小学": 1, "初中": 2, "高中": 3}
 XUBU_WHITELIST = list(XUBU_ORDER.keys())
-MODE_ORDER = {"大神": 1, "9.9池": 2, "爆量算法池": 3, "爆量本地化": 4}
+MODE_ORDER = {"大神": 1, "9.9池": 2, "爆量算法池": 3, "爆量再植课": 4, "爆量未加微": 5, "爆量本地化": 6}
 
 DATE_PATTERN = r"^\d{4}-\d{2}-\d{2}$"
 HOST = "0.0.0.0"

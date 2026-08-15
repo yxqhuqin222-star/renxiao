@@ -198,6 +198,9 @@
       position: relative;
       min-width: 190px;
     }
+    .date-dropdown {
+      min-width: 170px;
+    }
     .mode-dropdown summary {
       min-height: 42px;
       display: flex;
@@ -237,6 +240,11 @@
       background: #fff;
       box-shadow: var(--shadow);
     }
+    .date-menu {
+      max-height: min(260px, 45vh);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
     .mode-option {
       display: flex;
       align-items: center;
@@ -250,6 +258,19 @@
     }
     .mode-option:hover { background: var(--primary-soft); }
     .mode-option input { width: 15px; height: 15px; accent-color: var(--primary); }
+    .date-option {
+      width: 100%;
+      justify-content: flex-start;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      text-align: left;
+    }
+    .date-option[aria-selected="true"] {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 720;
+    }
     .mode-summary {
       min-width: 0;
       overflow: hidden;
@@ -441,6 +462,14 @@
       .date-range-field { min-width: 0; }
       .segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .custom-range { flex-direction: column; align-items: stretch; }
+      .date-dropdown { min-width: 0; width: 100%; }
+      .date-dropdown .mode-menu {
+        position: static;
+        width: 100%;
+        min-width: 0;
+        margin-top: 6px;
+        max-height: 220px;
+      }
       .range-sep { min-height: 20px; }
       h1 { font-size: 24px; }
       select, .text-select { font-size: 16px; }
@@ -459,11 +488,11 @@
         <form action="/upload" method="post">
           <button class="btn btn-primary" type="submit">上传并更新</button>
         </form>
-        <div class="latest-badge">最新：2026-08-13</div>
+        <div class="latest-badge">最新：2026-08-14</div>
       </div>
     </header>
 
-    
+
 
     <div class="stack">
       <section class="card chart-card" aria-labelledby="trend-title">
@@ -477,207 +506,219 @@
           </div>
         </div>
         <form class="controls chart-controls js-range-form" action="/" method="get">
-          
+
             <input type="hidden" name="table_view" value="latest">
-          
+
           <div class="field date-range-field">
             <span class="field-label">日期范围</span>
             <input type="hidden" name="chart_view" class="js-view-input" value="7d">
             <div class="segmented" role="group" aria-label="曲线日期范围">
-              
+
                 <button class="segment" type="button" data-view="latest" aria-pressed="false">最新一天</button>
-              
+
                 <button class="segment" type="button" data-view="all" aria-pressed="false">全部历史</button>
-              
+
                 <button class="segment" type="button" data-view="7d" aria-pressed="true">近 7 天</button>
-              
+
                 <button class="segment" type="button" data-view="custom" aria-pressed="false">自定义</button>
-              
+
             </div>
           </div>
           <div class="custom-range ">
             <div class="field">
-              <label for="chart-start">开始日期</label>
-              <select id="chart-start" name="chart_start">
-                <option value="">开始</option>
-                
-                  <option value="2026-08-13" >2026-08-13</option>
-                
-                  <option value="2026-08-12" >2026-08-12</option>
-                
-                  <option value="2026-08-11" >2026-08-11</option>
-                
-                  <option value="2026-08-10" >2026-08-10</option>
-                
-                  <option value="2026-08-09" >2026-08-09</option>
-                
-                  <option value="2026-08-08" >2026-08-08</option>
-                
-                  <option value="2026-08-07" >2026-08-07</option>
-                
-                  <option value="2026-08-06" >2026-08-06</option>
-                
-                  <option value="2026-08-05" >2026-08-05</option>
-                
-                  <option value="2026-08-04" >2026-08-04</option>
-                
-                  <option value="2026-08-03" >2026-08-03</option>
-                
-                  <option value="2026-08-02" >2026-08-02</option>
-                
-                  <option value="2026-08-01" >2026-08-01</option>
-                
-                  <option value="2026-07-31" >2026-07-31</option>
-                
-                  <option value="2026-07-30" >2026-07-30</option>
-                
-                  <option value="2026-07-29" >2026-07-29</option>
-                
-                  <option value="2026-07-28" >2026-07-28</option>
-                
-                  <option value="2026-07-27" >2026-07-27</option>
-                
-                  <option value="2026-07-26" >2026-07-26</option>
-                
-                  <option value="2026-07-25" >2026-07-25</option>
-                
-                  <option value="2026-07-24" >2026-07-24</option>
-                
-                  <option value="2026-07-23" >2026-07-23</option>
-                
-                  <option value="2026-07-22" >2026-07-22</option>
-                
-                  <option value="2026-07-21" >2026-07-21</option>
-                
-                  <option value="2026-07-20" >2026-07-20</option>
-                
-                  <option value="2026-07-19" >2026-07-19</option>
-                
-                  <option value="2026-07-17" >2026-07-17</option>
-                
-                  <option value="2026-07-16" >2026-07-16</option>
-                
-                  <option value="2026-07-15" >2026-07-15</option>
-                
-                  <option value="2026-07-14" >2026-07-14</option>
-                
-                  <option value="2026-07-13" >2026-07-13</option>
-                
-                  <option value="2026-07-12" >2026-07-12</option>
-                
-                  <option value="2026-07-11" >2026-07-11</option>
-                
-                  <option value="2026-07-10" >2026-07-10</option>
-                
-                  <option value="2026-07-09" >2026-07-09</option>
-                
-                  <option value="2026-07-08" >2026-07-08</option>
-                
-                  <option value="2026-07-07" >2026-07-07</option>
-                
-                  <option value="2026-07-05" >2026-07-05</option>
-                
-                  <option value="2026-07-04" >2026-07-04</option>
-                
-                  <option value="2026-07-03" >2026-07-03</option>
-                
-                  <option value="2026-07-02" >2026-07-02</option>
-                
-                  <option value="2026-07-01" >2026-07-01</option>
-                
-              </select>
+              <span class="field-label" id="chart-start-label">开始日期</span>
+              <input type="hidden" id="chart-start" name="chart_start" value="">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="chart-start" data-empty-label="开始">
+                <summary aria-labelledby="chart-start-label"><span class="mode-summary">开始</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="true">开始</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-13" aria-selected="false">2026-08-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-12" aria-selected="false">2026-08-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-11" aria-selected="false">2026-08-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-10" aria-selected="false">2026-08-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-09" aria-selected="false">2026-08-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-08" aria-selected="false">2026-08-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-07" aria-selected="false">2026-08-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-06" aria-selected="false">2026-08-06</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-05" aria-selected="false">2026-08-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-04" aria-selected="false">2026-08-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-03" aria-selected="false">2026-08-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-02" aria-selected="false">2026-08-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-01" aria-selected="false">2026-08-01</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-31" aria-selected="false">2026-07-31</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-30" aria-selected="false">2026-07-30</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-29" aria-selected="false">2026-07-29</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-28" aria-selected="false">2026-07-28</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-27" aria-selected="false">2026-07-27</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-26" aria-selected="false">2026-07-26</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-25" aria-selected="false">2026-07-25</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-24" aria-selected="false">2026-07-24</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-23" aria-selected="false">2026-07-23</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-22" aria-selected="false">2026-07-22</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-21" aria-selected="false">2026-07-21</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-20" aria-selected="false">2026-07-20</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-19" aria-selected="false">2026-07-19</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-17" aria-selected="false">2026-07-17</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-16" aria-selected="false">2026-07-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-15" aria-selected="false">2026-07-15</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-14" aria-selected="false">2026-07-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-13" aria-selected="false">2026-07-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-12" aria-selected="false">2026-07-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-11" aria-selected="false">2026-07-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-10" aria-selected="false">2026-07-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-09" aria-selected="false">2026-07-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-08" aria-selected="false">2026-07-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-07" aria-selected="false">2026-07-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-05" aria-selected="false">2026-07-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-04" aria-selected="false">2026-07-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-03" aria-selected="false">2026-07-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-02" aria-selected="false">2026-07-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-01" aria-selected="false">2026-07-01</button>
+
+                </div>
+              </details>
             </div>
             <span class="range-sep">至</span>
             <div class="field">
-              <label for="chart-end">结束日期</label>
-              <select id="chart-end" name="chart_end">
-                <option value="">结束</option>
-                
-                  <option value="2026-08-13" >2026-08-13</option>
-                
-                  <option value="2026-08-12" >2026-08-12</option>
-                
-                  <option value="2026-08-11" >2026-08-11</option>
-                
-                  <option value="2026-08-10" >2026-08-10</option>
-                
-                  <option value="2026-08-09" >2026-08-09</option>
-                
-                  <option value="2026-08-08" >2026-08-08</option>
-                
-                  <option value="2026-08-07" >2026-08-07</option>
-                
-                  <option value="2026-08-06" >2026-08-06</option>
-                
-                  <option value="2026-08-05" >2026-08-05</option>
-                
-                  <option value="2026-08-04" >2026-08-04</option>
-                
-                  <option value="2026-08-03" >2026-08-03</option>
-                
-                  <option value="2026-08-02" >2026-08-02</option>
-                
-                  <option value="2026-08-01" >2026-08-01</option>
-                
-                  <option value="2026-07-31" >2026-07-31</option>
-                
-                  <option value="2026-07-30" >2026-07-30</option>
-                
-                  <option value="2026-07-29" >2026-07-29</option>
-                
-                  <option value="2026-07-28" >2026-07-28</option>
-                
-                  <option value="2026-07-27" >2026-07-27</option>
-                
-                  <option value="2026-07-26" >2026-07-26</option>
-                
-                  <option value="2026-07-25" >2026-07-25</option>
-                
-                  <option value="2026-07-24" >2026-07-24</option>
-                
-                  <option value="2026-07-23" >2026-07-23</option>
-                
-                  <option value="2026-07-22" >2026-07-22</option>
-                
-                  <option value="2026-07-21" >2026-07-21</option>
-                
-                  <option value="2026-07-20" >2026-07-20</option>
-                
-                  <option value="2026-07-19" >2026-07-19</option>
-                
-                  <option value="2026-07-17" >2026-07-17</option>
-                
-                  <option value="2026-07-16" >2026-07-16</option>
-                
-                  <option value="2026-07-15" >2026-07-15</option>
-                
-                  <option value="2026-07-14" >2026-07-14</option>
-                
-                  <option value="2026-07-13" >2026-07-13</option>
-                
-                  <option value="2026-07-12" >2026-07-12</option>
-                
-                  <option value="2026-07-11" >2026-07-11</option>
-                
-                  <option value="2026-07-10" >2026-07-10</option>
-                
-                  <option value="2026-07-09" >2026-07-09</option>
-                
-                  <option value="2026-07-08" >2026-07-08</option>
-                
-                  <option value="2026-07-07" >2026-07-07</option>
-                
-                  <option value="2026-07-05" >2026-07-05</option>
-                
-                  <option value="2026-07-04" >2026-07-04</option>
-                
-                  <option value="2026-07-03" >2026-07-03</option>
-                
-                  <option value="2026-07-02" >2026-07-02</option>
-                
-                  <option value="2026-07-01" >2026-07-01</option>
-                
-              </select>
+              <span class="field-label" id="chart-end-label">结束日期</span>
+              <input type="hidden" id="chart-end" name="chart_end" value="">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="chart-end" data-empty-label="结束">
+                <summary aria-labelledby="chart-end-label"><span class="mode-summary">结束</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="true">结束</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-13" aria-selected="false">2026-08-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-12" aria-selected="false">2026-08-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-11" aria-selected="false">2026-08-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-10" aria-selected="false">2026-08-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-09" aria-selected="false">2026-08-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-08" aria-selected="false">2026-08-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-07" aria-selected="false">2026-08-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-06" aria-selected="false">2026-08-06</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-05" aria-selected="false">2026-08-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-04" aria-selected="false">2026-08-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-03" aria-selected="false">2026-08-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-02" aria-selected="false">2026-08-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-01" aria-selected="false">2026-08-01</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-31" aria-selected="false">2026-07-31</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-30" aria-selected="false">2026-07-30</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-29" aria-selected="false">2026-07-29</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-28" aria-selected="false">2026-07-28</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-27" aria-selected="false">2026-07-27</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-26" aria-selected="false">2026-07-26</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-25" aria-selected="false">2026-07-25</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-24" aria-selected="false">2026-07-24</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-23" aria-selected="false">2026-07-23</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-22" aria-selected="false">2026-07-22</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-21" aria-selected="false">2026-07-21</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-20" aria-selected="false">2026-07-20</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-19" aria-selected="false">2026-07-19</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-17" aria-selected="false">2026-07-17</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-16" aria-selected="false">2026-07-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-15" aria-selected="false">2026-07-15</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-14" aria-selected="false">2026-07-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-13" aria-selected="false">2026-07-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-12" aria-selected="false">2026-07-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-11" aria-selected="false">2026-07-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-10" aria-selected="false">2026-07-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-09" aria-selected="false">2026-07-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-08" aria-selected="false">2026-07-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-07" aria-selected="false">2026-07-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-05" aria-selected="false">2026-07-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-04" aria-selected="false">2026-07-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-03" aria-selected="false">2026-07-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-02" aria-selected="false">2026-07-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-01" aria-selected="false">2026-07-01</button>
+
+                </div>
+              </details>
             </div>
           </div>
           <div class="field">
@@ -685,34 +726,44 @@
             <details class="mode-dropdown js-mode-dropdown">
               <summary><span class="mode-summary">全部</span></summary>
               <div class="mode-menu">
-                
+
                   <label class="mode-option">
                     <input type="checkbox" name="chart_mode" value="9.9池" >
                     <span>9.9池</span>
                   </label>
-                
+
                   <label class="mode-option">
                     <input type="checkbox" name="chart_mode" value="大神" >
                     <span>大神</span>
                   </label>
-                
+
+                  <label class="mode-option">
+                    <input type="checkbox" name="chart_mode" value="爆量再植课" >
+                    <span>爆量再植课</span>
+                  </label>
+
+                  <label class="mode-option">
+                    <input type="checkbox" name="chart_mode" value="爆量未加微" >
+                    <span>爆量未加微</span>
+                  </label>
+
                   <label class="mode-option">
                     <input type="checkbox" name="chart_mode" value="爆量本地化" >
                     <span>爆量本地化</span>
                   </label>
-                
+
                   <label class="mode-option">
                     <input type="checkbox" name="chart_mode" value="爆量算法池" >
                     <span>爆量算法池</span>
                   </label>
-                
+
               </div>
             </details>
           </div>
           <button class="btn btn-primary" type="submit">查询</button>
           <a class="btn btn-secondary" href="/?chart_view=7d&amp;chart_start=&amp;chart_end=&amp;table_view=latest&amp;table_start=&amp;table_end=">重置</a>
         </form>
-        <div class="chart-wrap" id="trend-chart" data-points='[{"\u603b\u5355\u91cf": 1400.0, "\u65e5\u671f": "2026-08-08", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 108.3815}, {"\u603b\u5355\u91cf": 1142.0, "\u65e5\u671f": "2026-08-09", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 118.5543}, {"\u603b\u5355\u91cf": 426.0, "\u65e5\u671f": "2026-08-10", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 101.6482}, {"\u603b\u5355\u91cf": 1601.0, "\u65e5\u671f": "2026-08-11", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 96.3806}, {"\u603b\u5355\u91cf": 1417.0, "\u65e5\u671f": "2026-08-12", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 107.0345}, {"\u603b\u5355\u91cf": 1799.0, "\u65e5\u671f": "2026-08-13", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 88.7344}]'>
+        <div class="chart-wrap" id="trend-chart" data-points='[{"\u603b\u5355\u91cf": 1142.0, "\u65e5\u671f": "2026-08-09", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 118.5543}, {"\u603b\u5355\u91cf": 426.0, "\u65e5\u671f": "2026-08-10", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 101.6482}, {"\u603b\u5355\u91cf": 811.0, "\u65e5\u671f": "2026-08-11", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 144.5872}, {"\u603b\u5355\u91cf": 786.0, "\u65e5\u671f": "2026-08-12", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 152.3183}, {"\u603b\u5355\u91cf": 767.0, "\u65e5\u671f": "2026-08-13", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 137.3673}, {"\u603b\u5355\u91cf": 1647.0, "\u65e5\u671f": "2026-08-14", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 91.7371}]'>
           <svg class="chart-svg" role="img" aria-labelledby="trend-title" aria-describedby="trend-desc"></svg>
           <div class="chart-empty" hidden>
             <div>
@@ -731,207 +782,219 @@
           </div>
         </div>
         <form class="controls js-range-form" action="/" method="get">
-          
+
             <input type="hidden" name="chart_view" value="7d">
-          
+
           <div class="field date-range-field">
             <span class="field-label">日期范围</span>
             <input type="hidden" name="table_view" class="js-view-input" value="latest">
             <div class="segmented" role="group" aria-label="明细日期范围">
-              
+
                 <button class="segment" type="button" data-view="latest" aria-pressed="true">最新一天</button>
-              
+
                 <button class="segment" type="button" data-view="all" aria-pressed="false">全部历史</button>
-              
+
                 <button class="segment" type="button" data-view="7d" aria-pressed="false">近 7 天</button>
-              
+
                 <button class="segment" type="button" data-view="custom" aria-pressed="false">自定义</button>
-              
+
             </div>
           </div>
           <div class="custom-range ">
             <div class="field">
-              <label for="table-start">开始日期</label>
-              <select id="table-start" name="table_start">
-                <option value="">开始</option>
-                
-                  <option value="2026-08-13" >2026-08-13</option>
-                
-                  <option value="2026-08-12" >2026-08-12</option>
-                
-                  <option value="2026-08-11" >2026-08-11</option>
-                
-                  <option value="2026-08-10" >2026-08-10</option>
-                
-                  <option value="2026-08-09" >2026-08-09</option>
-                
-                  <option value="2026-08-08" >2026-08-08</option>
-                
-                  <option value="2026-08-07" >2026-08-07</option>
-                
-                  <option value="2026-08-06" >2026-08-06</option>
-                
-                  <option value="2026-08-05" >2026-08-05</option>
-                
-                  <option value="2026-08-04" >2026-08-04</option>
-                
-                  <option value="2026-08-03" >2026-08-03</option>
-                
-                  <option value="2026-08-02" >2026-08-02</option>
-                
-                  <option value="2026-08-01" >2026-08-01</option>
-                
-                  <option value="2026-07-31" >2026-07-31</option>
-                
-                  <option value="2026-07-30" >2026-07-30</option>
-                
-                  <option value="2026-07-29" >2026-07-29</option>
-                
-                  <option value="2026-07-28" >2026-07-28</option>
-                
-                  <option value="2026-07-27" >2026-07-27</option>
-                
-                  <option value="2026-07-26" >2026-07-26</option>
-                
-                  <option value="2026-07-25" >2026-07-25</option>
-                
-                  <option value="2026-07-24" >2026-07-24</option>
-                
-                  <option value="2026-07-23" >2026-07-23</option>
-                
-                  <option value="2026-07-22" >2026-07-22</option>
-                
-                  <option value="2026-07-21" >2026-07-21</option>
-                
-                  <option value="2026-07-20" >2026-07-20</option>
-                
-                  <option value="2026-07-19" >2026-07-19</option>
-                
-                  <option value="2026-07-17" >2026-07-17</option>
-                
-                  <option value="2026-07-16" >2026-07-16</option>
-                
-                  <option value="2026-07-15" >2026-07-15</option>
-                
-                  <option value="2026-07-14" >2026-07-14</option>
-                
-                  <option value="2026-07-13" >2026-07-13</option>
-                
-                  <option value="2026-07-12" >2026-07-12</option>
-                
-                  <option value="2026-07-11" >2026-07-11</option>
-                
-                  <option value="2026-07-10" >2026-07-10</option>
-                
-                  <option value="2026-07-09" >2026-07-09</option>
-                
-                  <option value="2026-07-08" >2026-07-08</option>
-                
-                  <option value="2026-07-07" >2026-07-07</option>
-                
-                  <option value="2026-07-05" >2026-07-05</option>
-                
-                  <option value="2026-07-04" >2026-07-04</option>
-                
-                  <option value="2026-07-03" >2026-07-03</option>
-                
-                  <option value="2026-07-02" >2026-07-02</option>
-                
-                  <option value="2026-07-01" >2026-07-01</option>
-                
-              </select>
+              <span class="field-label" id="table-start-label">开始日期</span>
+              <input type="hidden" id="table-start" name="table_start" value="">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="table-start" data-empty-label="开始">
+                <summary aria-labelledby="table-start-label"><span class="mode-summary">开始</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="true">开始</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-13" aria-selected="false">2026-08-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-12" aria-selected="false">2026-08-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-11" aria-selected="false">2026-08-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-10" aria-selected="false">2026-08-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-09" aria-selected="false">2026-08-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-08" aria-selected="false">2026-08-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-07" aria-selected="false">2026-08-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-06" aria-selected="false">2026-08-06</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-05" aria-selected="false">2026-08-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-04" aria-selected="false">2026-08-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-03" aria-selected="false">2026-08-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-02" aria-selected="false">2026-08-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-01" aria-selected="false">2026-08-01</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-31" aria-selected="false">2026-07-31</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-30" aria-selected="false">2026-07-30</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-29" aria-selected="false">2026-07-29</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-28" aria-selected="false">2026-07-28</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-27" aria-selected="false">2026-07-27</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-26" aria-selected="false">2026-07-26</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-25" aria-selected="false">2026-07-25</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-24" aria-selected="false">2026-07-24</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-23" aria-selected="false">2026-07-23</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-22" aria-selected="false">2026-07-22</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-21" aria-selected="false">2026-07-21</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-20" aria-selected="false">2026-07-20</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-19" aria-selected="false">2026-07-19</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-17" aria-selected="false">2026-07-17</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-16" aria-selected="false">2026-07-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-15" aria-selected="false">2026-07-15</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-14" aria-selected="false">2026-07-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-13" aria-selected="false">2026-07-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-12" aria-selected="false">2026-07-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-11" aria-selected="false">2026-07-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-10" aria-selected="false">2026-07-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-09" aria-selected="false">2026-07-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-08" aria-selected="false">2026-07-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-07" aria-selected="false">2026-07-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-05" aria-selected="false">2026-07-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-04" aria-selected="false">2026-07-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-03" aria-selected="false">2026-07-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-02" aria-selected="false">2026-07-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-01" aria-selected="false">2026-07-01</button>
+
+                </div>
+              </details>
             </div>
             <span class="range-sep">至</span>
             <div class="field">
-              <label for="table-end">结束日期</label>
-              <select id="table-end" name="table_end">
-                <option value="">结束</option>
-                
-                  <option value="2026-08-13" >2026-08-13</option>
-                
-                  <option value="2026-08-12" >2026-08-12</option>
-                
-                  <option value="2026-08-11" >2026-08-11</option>
-                
-                  <option value="2026-08-10" >2026-08-10</option>
-                
-                  <option value="2026-08-09" >2026-08-09</option>
-                
-                  <option value="2026-08-08" >2026-08-08</option>
-                
-                  <option value="2026-08-07" >2026-08-07</option>
-                
-                  <option value="2026-08-06" >2026-08-06</option>
-                
-                  <option value="2026-08-05" >2026-08-05</option>
-                
-                  <option value="2026-08-04" >2026-08-04</option>
-                
-                  <option value="2026-08-03" >2026-08-03</option>
-                
-                  <option value="2026-08-02" >2026-08-02</option>
-                
-                  <option value="2026-08-01" >2026-08-01</option>
-                
-                  <option value="2026-07-31" >2026-07-31</option>
-                
-                  <option value="2026-07-30" >2026-07-30</option>
-                
-                  <option value="2026-07-29" >2026-07-29</option>
-                
-                  <option value="2026-07-28" >2026-07-28</option>
-                
-                  <option value="2026-07-27" >2026-07-27</option>
-                
-                  <option value="2026-07-26" >2026-07-26</option>
-                
-                  <option value="2026-07-25" >2026-07-25</option>
-                
-                  <option value="2026-07-24" >2026-07-24</option>
-                
-                  <option value="2026-07-23" >2026-07-23</option>
-                
-                  <option value="2026-07-22" >2026-07-22</option>
-                
-                  <option value="2026-07-21" >2026-07-21</option>
-                
-                  <option value="2026-07-20" >2026-07-20</option>
-                
-                  <option value="2026-07-19" >2026-07-19</option>
-                
-                  <option value="2026-07-17" >2026-07-17</option>
-                
-                  <option value="2026-07-16" >2026-07-16</option>
-                
-                  <option value="2026-07-15" >2026-07-15</option>
-                
-                  <option value="2026-07-14" >2026-07-14</option>
-                
-                  <option value="2026-07-13" >2026-07-13</option>
-                
-                  <option value="2026-07-12" >2026-07-12</option>
-                
-                  <option value="2026-07-11" >2026-07-11</option>
-                
-                  <option value="2026-07-10" >2026-07-10</option>
-                
-                  <option value="2026-07-09" >2026-07-09</option>
-                
-                  <option value="2026-07-08" >2026-07-08</option>
-                
-                  <option value="2026-07-07" >2026-07-07</option>
-                
-                  <option value="2026-07-05" >2026-07-05</option>
-                
-                  <option value="2026-07-04" >2026-07-04</option>
-                
-                  <option value="2026-07-03" >2026-07-03</option>
-                
-                  <option value="2026-07-02" >2026-07-02</option>
-                
-                  <option value="2026-07-01" >2026-07-01</option>
-                
-              </select>
+              <span class="field-label" id="table-end-label">结束日期</span>
+              <input type="hidden" id="table-end" name="table_end" value="">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="table-end" data-empty-label="结束">
+                <summary aria-labelledby="table-end-label"><span class="mode-summary">结束</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="true">结束</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-13" aria-selected="false">2026-08-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-12" aria-selected="false">2026-08-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-11" aria-selected="false">2026-08-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-10" aria-selected="false">2026-08-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-09" aria-selected="false">2026-08-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-08" aria-selected="false">2026-08-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-07" aria-selected="false">2026-08-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-06" aria-selected="false">2026-08-06</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-05" aria-selected="false">2026-08-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-04" aria-selected="false">2026-08-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-03" aria-selected="false">2026-08-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-02" aria-selected="false">2026-08-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-01" aria-selected="false">2026-08-01</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-31" aria-selected="false">2026-07-31</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-30" aria-selected="false">2026-07-30</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-29" aria-selected="false">2026-07-29</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-28" aria-selected="false">2026-07-28</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-27" aria-selected="false">2026-07-27</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-26" aria-selected="false">2026-07-26</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-25" aria-selected="false">2026-07-25</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-24" aria-selected="false">2026-07-24</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-23" aria-selected="false">2026-07-23</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-22" aria-selected="false">2026-07-22</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-21" aria-selected="false">2026-07-21</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-20" aria-selected="false">2026-07-20</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-19" aria-selected="false">2026-07-19</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-17" aria-selected="false">2026-07-17</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-16" aria-selected="false">2026-07-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-15" aria-selected="false">2026-07-15</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-14" aria-selected="false">2026-07-14</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-13" aria-selected="false">2026-07-13</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-12" aria-selected="false">2026-07-12</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-11" aria-selected="false">2026-07-11</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-10" aria-selected="false">2026-07-10</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-09" aria-selected="false">2026-07-09</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-08" aria-selected="false">2026-07-08</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-07" aria-selected="false">2026-07-07</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-05" aria-selected="false">2026-07-05</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-04" aria-selected="false">2026-07-04</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-03" aria-selected="false">2026-07-03</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-02" aria-selected="false">2026-07-02</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-07-01" aria-selected="false">2026-07-01</button>
+
+                </div>
+              </details>
             </div>
           </div>
           <div class="field">
@@ -939,27 +1002,37 @@
             <details class="mode-dropdown js-mode-dropdown">
               <summary><span class="mode-summary">全部</span></summary>
               <div class="mode-menu">
-                
+
                   <label class="mode-option">
                     <input type="checkbox" name="table_mode" value="9.9池" >
                     <span>9.9池</span>
                   </label>
-                
+
                   <label class="mode-option">
                     <input type="checkbox" name="table_mode" value="大神" >
                     <span>大神</span>
                   </label>
-                
+
+                  <label class="mode-option">
+                    <input type="checkbox" name="table_mode" value="爆量再植课" >
+                    <span>爆量再植课</span>
+                  </label>
+
+                  <label class="mode-option">
+                    <input type="checkbox" name="table_mode" value="爆量未加微" >
+                    <span>爆量未加微</span>
+                  </label>
+
                   <label class="mode-option">
                     <input type="checkbox" name="table_mode" value="爆量本地化" >
                     <span>爆量本地化</span>
                   </label>
-                
+
                   <label class="mode-option">
                     <input type="checkbox" name="table_mode" value="爆量算法池" >
                     <span>爆量算法池</span>
                   </label>
-                
+
               </div>
             </details>
           </div>
@@ -968,22 +1041,22 @@
             <details class="mode-dropdown js-mode-dropdown" id="table-xuebu">
               <summary><span class="mode-summary">全部</span></summary>
               <div class="mode-menu">
-              
+
                 <label class="mode-option">
                   <input type="checkbox" name="table_xuebu" value="小学" >
                   <span>小学</span>
                 </label>
-              
+
                 <label class="mode-option">
                   <input type="checkbox" name="table_xuebu" value="初中" >
                   <span>初中</span>
                 </label>
-              
+
                 <label class="mode-option">
                   <input type="checkbox" name="table_xuebu" value="高中" >
                   <span>高中</span>
                 </label>
-              
+
               </div>
             </details>
           </div>
@@ -996,7 +1069,7 @@
         <div class="table-head">
           <div>
             <h2 class="section-title" id="result-title">结果明细</h2>
-            <div class="result-count">共 <b>7</b> 行 <span>最新一天</span></div>
+            <div class="result-count">共 <b>9</b> 行 <span>最新一天</span></div>
           </div>
           <a class="btn btn-secondary" href="/download?table_view=latest&amp;table_start=&amp;table_end=">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
@@ -1004,7 +1077,7 @@
           </a>
         </div>
         <div class="table-wrap">
-          
+
             <table>
               <thead>
                 <tr>
@@ -1018,80 +1091,100 @@
                 </tr>
               </thead>
               <tbody>
-                
+
                   <tr>
-                    <td class="date-value">2026-08-13</td>
+                    <td class="date-value">2026-08-14</td>
                     <td><span class="pill mode">大神</span></td>
                     <td><span class="pill x小学">小学</span></td>
-                    <td class="num">3.8</td>
-                    <td class="num">32.4</td>
-                    <td class="num">143.1</td>
+                    <td class="num">3.6</td>
+                    <td class="num">32.5</td>
+                    <td class="num">148.3</td>
                     <td class="num">0.30%</td>
                   </tr>
-                
+
                   <tr>
-                    <td class="date-value">2026-08-13</td>
+                    <td class="date-value">2026-08-14</td>
                     <td><span class="pill mode">大神</span></td>
                     <td><span class="pill x初中">初中</span></td>
-                    <td class="num">3.8</td>
-                    <td class="num">16.4</td>
-                    <td class="num">127.1</td>
-                    <td class="num">0.67%</td>
+                    <td class="num">3.6</td>
+                    <td class="num">26.3</td>
+                    <td class="num">142.1</td>
+                    <td class="num">0.38%</td>
                   </tr>
-                
+
                   <tr>
-                    <td class="date-value">2026-08-13</td>
+                    <td class="date-value">2026-08-14</td>
                     <td><span class="pill mode">9.9池</span></td>
                     <td><span class="pill x初中">初中</span></td>
-                    <td class="num">2.6</td>
-                    <td class="num">92.7</td>
-                    <td class="num">182.7</td>
-                    <td class="num">0.10%</td>
+                    <td class="num">1.7</td>
+                    <td class="num">164.8</td>
+                    <td class="num">254.8</td>
+                    <td class="num">0.05%</td>
                   </tr>
-                
+
                   <tr>
-                    <td class="date-value">2026-08-13</td>
-                    <td><span class="pill mode">爆量算法池</span></td>
+                    <td class="date-value">2026-08-14</td>
+                    <td><span class="pill mode">爆量再植课</span></td>
                     <td><span class="pill x初中">初中</span></td>
-                    <td class="num">9.8</td>
-                    <td class="num">20.5</td>
-                    <td class="num">60.5</td>
-                    <td class="num">0.46%</td>
+                    <td class="num">8.9</td>
+                    <td class="num">23.5</td>
+                    <td class="num">63.5</td>
+                    <td class="num">0.40%</td>
                   </tr>
-                
+
                   <tr>
-                    <td class="date-value">2026-08-13</td>
-                    <td><span class="pill mode">爆量算法池</span></td>
+                    <td class="date-value">2026-08-14</td>
+                    <td><span class="pill mode">爆量再植课</span></td>
                     <td><span class="pill x高中">高中</span></td>
-                    <td class="num">9.8</td>
-                    <td class="num">5.3</td>
-                    <td class="num">45.3</td>
-                    <td class="num">2.08%</td>
+                    <td class="num">8.9</td>
+                    <td class="num">6.4</td>
+                    <td class="num">46.4</td>
+                    <td class="num">1.66%</td>
                   </tr>
-                
+
                   <tr>
-                    <td class="date-value">2026-08-13</td>
+                    <td class="date-value">2026-08-14</td>
+                    <td><span class="pill mode">爆量未加微</span></td>
+                    <td><span class="pill x初中">初中</span></td>
+                    <td class="num">8.5</td>
+                    <td class="num">13.2</td>
+                    <td class="num">13.2</td>
+                    <td class="num">0.75%</td>
+                  </tr>
+
+                  <tr>
+                    <td class="date-value">2026-08-14</td>
+                    <td><span class="pill mode">爆量未加微</span></td>
+                    <td><span class="pill x高中">高中</span></td>
+                    <td class="num">8.5</td>
+                    <td class="num">3.0</td>
+                    <td class="num">3.0</td>
+                    <td class="num">4.28%</td>
+                  </tr>
+
+                  <tr>
+                    <td class="date-value">2026-08-14</td>
                     <td><span class="pill mode">爆量本地化</span></td>
                     <td><span class="pill x初中">初中</span></td>
-                    <td class="num">5.0</td>
-                    <td class="num">102.6</td>
-                    <td class="num">152.6</td>
-                    <td class="num">0.09%</td>
+                    <td class="num">5.8</td>
+                    <td class="num">210.6</td>
+                    <td class="num">260.6</td>
+                    <td class="num">0.04%</td>
                   </tr>
-                
+
                   <tr>
-                    <td class="date-value">2026-08-13</td>
+                    <td class="date-value">2026-08-14</td>
                     <td><span class="pill mode">爆量本地化</span></td>
                     <td><span class="pill x高中">高中</span></td>
-                    <td class="num">5.0</td>
-                    <td class="num">73.3</td>
-                    <td class="num">123.3</td>
-                    <td class="num">0.12%</td>
+                    <td class="num">5.8</td>
+                    <td class="num">60.2</td>
+                    <td class="num">110.2</td>
+                    <td class="num">0.15%</td>
                   </tr>
-                
+
               </tbody>
             </table>
-          
+
         </div>
       </section>
     </div>
@@ -1123,8 +1216,29 @@
       refresh();
     });
 
+    document.querySelectorAll(".js-date-dropdown").forEach((dropdown) => {
+      const input = document.getElementById(dropdown.dataset.input);
+      const summary = dropdown.querySelector(".mode-summary");
+      const options = Array.from(dropdown.querySelectorAll(".date-option"));
+      const refresh = () => {
+        const selected = options.find((option) => option.dataset.value === input.value);
+        summary.textContent = selected ? selected.textContent : dropdown.dataset.emptyLabel;
+        options.forEach((option) => {
+          option.setAttribute("aria-selected", option === selected ? "true" : "false");
+        });
+      };
+      options.forEach((option) => {
+        option.addEventListener("click", () => {
+          input.value = option.dataset.value;
+          refresh();
+          dropdown.removeAttribute("open");
+        });
+      });
+      refresh();
+    });
+
     document.addEventListener("click", (event) => {
-      document.querySelectorAll(".js-mode-dropdown[open]").forEach((dropdown) => {
+      document.querySelectorAll(".js-mode-dropdown[open], .js-date-dropdown[open]").forEach((dropdown) => {
         if (!dropdown.contains(event.target)) {
           dropdown.removeAttribute("open");
         }

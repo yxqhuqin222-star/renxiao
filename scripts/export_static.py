@@ -20,7 +20,7 @@ def main() -> None:
         response.raise_for_status = lambda: None
         if response.status_code != 200:
             raise SystemExit(f"GET / failed: {response.status_code}")
-        html = response.get_data(as_text=True)
+        html = "\n".join(line.rstrip() for line in response.get_data(as_text=True).splitlines()) + "\n"
     banner = (
         "<!-- Static GitHub Pages snapshot generated from Flask. "
         "Upload and download actions require the live Flask app. -->\n"

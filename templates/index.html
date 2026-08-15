@@ -197,6 +197,9 @@
       position: relative;
       min-width: 190px;
     }
+    .date-dropdown {
+      min-width: 170px;
+    }
     .mode-dropdown summary {
       min-height: 42px;
       display: flex;
@@ -236,6 +239,11 @@
       background: #fff;
       box-shadow: var(--shadow);
     }
+    .date-menu {
+      max-height: min(260px, 45vh);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
     .mode-option {
       display: flex;
       align-items: center;
@@ -249,6 +257,19 @@
     }
     .mode-option:hover { background: var(--primary-soft); }
     .mode-option input { width: 15px; height: 15px; accent-color: var(--primary); }
+    .date-option {
+      width: 100%;
+      justify-content: flex-start;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      text-align: left;
+    }
+    .date-option[aria-selected="true"] {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 720;
+    }
     .mode-summary {
       min-width: 0;
       overflow: hidden;
@@ -440,6 +461,14 @@
       .date-range-field { min-width: 0; }
       .segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .custom-range { flex-direction: column; align-items: stretch; }
+      .date-dropdown { min-width: 0; width: 100%; }
+      .date-dropdown .mode-menu {
+        position: static;
+        width: 100%;
+        min-width: 0;
+        margin-top: 6px;
+        max-height: 220px;
+      }
       .range-sep { min-height: 20px; }
       h1 { font-size: 24px; }
       select, .text-select { font-size: 16px; }
@@ -492,23 +521,31 @@
           </div>
           <div class="custom-range {{ 'is-visible' if chart_filters.view == 'custom' else '' }}">
             <div class="field">
-              <label for="chart-start">开始日期</label>
-              <select id="chart-start" name="chart_start">
-                <option value="">开始</option>
-                {% for date in dates %}
-                  <option value="{{ date }}" {{ "selected" if chart_filters.start == date else "" }}>{{ date }}</option>
-                {% endfor %}
-              </select>
+              <span class="field-label" id="chart-start-label">开始日期</span>
+              <input type="hidden" id="chart-start" name="chart_start" value="{{ chart_filters.start or '' }}">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="chart-start" data-empty-label="开始">
+                <summary aria-labelledby="chart-start-label"><span class="mode-summary">开始</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not chart_filters.start else 'false' }}">开始</button>
+                  {% for date in dates %}
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if chart_filters.start == date else 'false' }}">{{ date }}</button>
+                  {% endfor %}
+                </div>
+              </details>
             </div>
             <span class="range-sep">至</span>
             <div class="field">
-              <label for="chart-end">结束日期</label>
-              <select id="chart-end" name="chart_end">
-                <option value="">结束</option>
-                {% for date in dates %}
-                  <option value="{{ date }}" {{ "selected" if chart_filters.end == date else "" }}>{{ date }}</option>
-                {% endfor %}
-              </select>
+              <span class="field-label" id="chart-end-label">结束日期</span>
+              <input type="hidden" id="chart-end" name="chart_end" value="{{ chart_filters.end or '' }}">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="chart-end" data-empty-label="结束">
+                <summary aria-labelledby="chart-end-label"><span class="mode-summary">结束</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not chart_filters.end else 'false' }}">结束</button>
+                  {% for date in dates %}
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if chart_filters.end == date else 'false' }}">{{ date }}</button>
+                  {% endfor %}
+                </div>
+              </details>
             </div>
           </div>
           <div class="field">
@@ -561,23 +598,31 @@
           </div>
           <div class="custom-range {{ 'is-visible' if table_filters.view == 'custom' else '' }}">
             <div class="field">
-              <label for="table-start">开始日期</label>
-              <select id="table-start" name="table_start">
-                <option value="">开始</option>
-                {% for date in dates %}
-                  <option value="{{ date }}" {{ "selected" if table_filters.start == date else "" }}>{{ date }}</option>
-                {% endfor %}
-              </select>
+              <span class="field-label" id="table-start-label">开始日期</span>
+              <input type="hidden" id="table-start" name="table_start" value="{{ table_filters.start or '' }}">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="table-start" data-empty-label="开始">
+                <summary aria-labelledby="table-start-label"><span class="mode-summary">开始</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not table_filters.start else 'false' }}">开始</button>
+                  {% for date in dates %}
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if table_filters.start == date else 'false' }}">{{ date }}</button>
+                  {% endfor %}
+                </div>
+              </details>
             </div>
             <span class="range-sep">至</span>
             <div class="field">
-              <label for="table-end">结束日期</label>
-              <select id="table-end" name="table_end">
-                <option value="">结束</option>
-                {% for date in dates %}
-                  <option value="{{ date }}" {{ "selected" if table_filters.end == date else "" }}>{{ date }}</option>
-                {% endfor %}
-              </select>
+              <span class="field-label" id="table-end-label">结束日期</span>
+              <input type="hidden" id="table-end" name="table_end" value="{{ table_filters.end or '' }}">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="table-end" data-empty-label="结束">
+                <summary aria-labelledby="table-end-label"><span class="mode-summary">结束</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not table_filters.end else 'false' }}">结束</button>
+                  {% for date in dates %}
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if table_filters.end == date else 'false' }}">{{ date }}</button>
+                  {% endfor %}
+                </div>
+              </details>
             </div>
           </div>
           <div class="field">
@@ -689,8 +734,29 @@
       refresh();
     });
 
+    document.querySelectorAll(".js-date-dropdown").forEach((dropdown) => {
+      const input = document.getElementById(dropdown.dataset.input);
+      const summary = dropdown.querySelector(".mode-summary");
+      const options = Array.from(dropdown.querySelectorAll(".date-option"));
+      const refresh = () => {
+        const selected = options.find((option) => option.dataset.value === input.value);
+        summary.textContent = selected ? selected.textContent : dropdown.dataset.emptyLabel;
+        options.forEach((option) => {
+          option.setAttribute("aria-selected", option === selected ? "true" : "false");
+        });
+      };
+      options.forEach((option) => {
+        option.addEventListener("click", () => {
+          input.value = option.dataset.value;
+          refresh();
+          dropdown.removeAttribute("open");
+        });
+      });
+      refresh();
+    });
+
     document.addEventListener("click", (event) => {
-      document.querySelectorAll(".js-mode-dropdown[open]").forEach((dropdown) => {
+      document.querySelectorAll(".js-mode-dropdown[open], .js-date-dropdown[open]").forEach((dropdown) => {
         if (!dropdown.contains(event.target)) {
           dropdown.removeAttribute("open");
         }

@@ -97,6 +97,8 @@ def aggregate_tongshi(tongshi_rows: list[dict[str, Any]]) -> dict[tuple[str, str
 
 
 def labor_cost(mode: str, efficiency: float) -> float | None:
+    if mode in S.LINE_ONLY_COST_MODES:
+        return 0.0
     if mode in S.LABOR_COST_RULES:
         return S.LABOR_COST_RULES[mode]
     if mode == "大神" and efficiency:
