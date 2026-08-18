@@ -108,6 +108,12 @@ def _fmt_rate(value: object) -> str:
     return f"{float(value) * 100:.2f}%"
 
 
+def _fmt_int(value: object) -> str:
+    if value is None:
+        return "-"
+    return str(int(round(float(value))))
+
+
 @app.route("/favicon.ico")
 @app.route("/apple-touch-icon.png")
 @app.route("/android-chrome-192x192.png")
@@ -141,6 +147,34 @@ def _metrics(rows: list[dict]) -> dict[str, object]:
         "avg_rate": _fmt_rate(avg_rate),
         "attention": f"{high_cost['流转模式']} · {high_cost['学部']} 成本最高",
         "attention_detail": f"单例子结算成本 {_fmt_cost(high_cost['单例子结算成本'])}；最低转化率为 {low_rate['流转模式']} · {low_rate['学部']} {_fmt_rate(low_rate['接通转化率'])}",
+    }
+
+
+def _table_aggregate(rows: list[dict]) -> dict[str, str]:
+    total_examples = sum(float(row.get("单量") or 0) for row in rows)
+    if total_examples <= 0:
+        return {
+            "efficiency": "-",
+            "case_cost": "-",
+            "line_cost": "-",
+            "rate": "-",
+            "total_examples": "-",
+        }
+    case_cost = sum(float(row.get("单例子结算成本") or 0) * float(row.get("单量") or 0) for row in rows) / total_examples
+    line_cost = sum(float(row.get("线路成本") or 0) * float(row.get("单量") or 0) for row in rows) / total_examples
+    ai_connected = sum(float(row.get("AI接通数") or 0) for row in rows)
+    by_day_mode = {}
+    for row in rows:
+        key = (row["日期"], row["流转模式"])
+        by_day_mode.setdefault(key, row)
+    total_attendance = sum(float(row.get("出勤") or 0) for row in by_day_mode.values())
+    total_efficiency_volume = sum(float(row.get("人效单量") or 0) for row in by_day_mode.values())
+    return {
+        "efficiency": _fmt_num(total_efficiency_volume / total_attendance, 1) if total_attendance else "-",
+        "case_cost": _fmt_cost(case_cost),
+        "line_cost": _fmt_cost(line_cost),
+        "rate": _fmt_rate(total_examples / ai_connected) if ai_connected else "-",
+        "total_examples": _fmt_int(total_examples),
     }
 
 
@@ -187,6 +221,7 @@ def index():
     for row in rows:
         item = dict(row)
         item["人效_display"] = _fmt_num(row["人效"], 1)
+        item["单量_display"] = _fmt_int(row["单量"])
         item["线路成本_display"] = _fmt_cost(row["线路成本"])
         item["单例子结算成本_display"] = _fmt_cost(row["单例子结算成本"])
         item["接通转化率_display"] = _fmt_rate(row["接通转化率"])
@@ -196,6 +231,7 @@ def index():
         "index.html",
         rows=formatted_rows,
         metrics=_metrics(rows),
+        table_aggregate=_table_aggregate(rows),
         dates=distinct_dates(),
         modes=distinct_modes(),
         xuebus=S.XUBU_WHITELIST,

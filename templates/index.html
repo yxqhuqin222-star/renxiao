@@ -397,6 +397,37 @@
     }
     .result-count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
     .result-count b { color: var(--ink); font-size: 16px; }
+    .result-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+    }
+    .summary-item {
+      min-width: 0;
+      padding-right: 12px;
+      border-right: 1px solid var(--line);
+    }
+    .summary-item:last-child { border-right: 0; padding-right: 0; }
+    .summary-label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink-muted);
+      font-size: 12px;
+      font-weight: 680;
+    }
+    .summary-value {
+      display: block;
+      color: var(--ink);
+      font-size: 20px;
+      font-weight: 760;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+    }
     .table-wrap {
       width: 100%;
       overflow: auto;
@@ -457,6 +488,14 @@
       .chart-stat { text-align: left; }
       .topbar-actions { align-items: stretch; flex-direction: column-reverse; }
       .controls { align-items: stretch; }
+      .result-summary { grid-template-columns: 1fr; }
+      .summary-item {
+        padding-right: 0;
+        padding-bottom: 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .summary-item:last-child { padding-bottom: 0; border-bottom: 0; }
       .field, .btn, .custom-range, .segmented { width: 100%; }
       .date-range-field { min-width: 0; }
       .segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -669,6 +708,28 @@
             下载 result.xlsx
           </a>
         </div>
+        <div class="result-summary" aria-label="当前筛选聚合">
+          <div class="summary-item">
+            <span class="summary-label">聚合人效</span>
+            <span class="summary-value">{{ table_aggregate.efficiency }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">总单量</span>
+            <span class="summary-value">{{ table_aggregate.total_examples }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">聚合线路成本</span>
+            <span class="summary-value">{{ table_aggregate.line_cost }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">聚合单例子结算成本</span>
+            <span class="summary-value">{{ table_aggregate.case_cost }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">聚合接通转化率</span>
+            <span class="summary-value">{{ table_aggregate.rate }}</span>
+          </div>
+        </div>
         <div class="table-wrap">
           {% if rows %}
             <table>
@@ -678,6 +739,7 @@
                   <th>流转模式</th>
                   <th>学部</th>
                   <th>人效</th>
+                  <th>单量</th>
                   <th>线路成本</th>
                   <th>单例子结算成本</th>
                   <th>接通转化率</th>
@@ -690,6 +752,7 @@
                     <td><span class="pill mode">{{ row["流转模式"] }}</span></td>
                     <td><span class="pill x{{ row['学部'] }}">{{ row["学部"] }}</span></td>
                     <td class="num">{{ row["人效_display"] }}</td>
+                    <td class="num">{{ row["单量_display"] }}</td>
                     <td class="num">{{ row["线路成本_display"] }}</td>
                     <td class="num">{{ row["单例子结算成本_display"] }}</td>
                     <td class="num">{{ row["接通转化率_display"] }}</td>

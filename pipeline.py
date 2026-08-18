@@ -79,20 +79,17 @@ def aggregate_tongshi(tongshi_rows: list[dict[str, Any]]) -> dict[tuple[str, str
         xuebu = str(xuebu).strip()
         if not mode or not xuebu:
             continue
-        bucket = agg.setdefault((day, mode, xuebu), {"hd": 0.0, "ex": 0.0, "rate": None, "rate_w": 0.0})
+        bucket = agg.setdefault((day, mode, xuebu), {"hd": 0.0, "ex": 0.0, "ai": 0.0, "rate": None})
         bucket["hd"] = float(bucket["hd"] or 0.0) + _to_float(row.get("话单分钟数"))
         examples = _to_float(row.get("例子数"))
         bucket["ex"] = float(bucket["ex"] or 0.0) + examples
-        rate = _to_float(row.get("接通转化率")) if "接通转化率" in row else None
-        if rate:
-            bucket["rate_w"] = float(bucket["rate_w"] or 0.0) + rate * examples
+        bucket["ai"] = float(bucket["ai"] or 0.0) + _to_float(row.get("AI接通数"))
 
     for bucket in agg.values():
-        rate_w = float(bucket.get("rate_w") or 0.0)
         examples = float(bucket.get("ex") or 0.0)
-        if rate_w and examples:
-            bucket["rate"] = rate_w / examples
-        del bucket["rate_w"]
+        ai_connected = float(bucket.get("ai") or 0.0)
+        if ai_connected:
+            bucket["rate"] = examples / ai_connected
     return agg
 
 
@@ -126,9 +123,14 @@ def compute_result(
         if not mode:
             skipped.append((day, mode, "流转模式为空"))
             continue
-        efficiency = _to_float(row.get("人效"))
+        volume = _to_float(row.get("单量"))
+        attendance = _to_float(row.get("出勤"))
+        if attendance == 0.0:
+            skipped.append((day, mode, "出勤为空或为 0"))
+            continue
+        efficiency = volume / attendance
         if efficiency == 0.0:
-            skipped.append((day, mode, "人效为空或为 0"))
+            skipped.append((day, mode, "单量为空或为 0"))
             continue
         human_cost = labor_cost(mode, efficiency)
         if human_cost is None:
@@ -146,9 +148,21 @@ def compute_result(
             line_cost = round(S.LINE_COST_UNIT * float(values["hd"] or 0.0) / examples, S.COST_DECIMALS)
             settlement_cost = round(human_cost + line_cost, S.COST_DECIMALS)
             rate = values.get("rate")
-            if rate is None:
-                rate = _to_float(row.get("接通转化率"))
-            rows.append((day, mode, xuebu, efficiency, line_cost, settlement_cost, rate, examples))
+            rows.append(
+                (
+                    day,
+                    mode,
+                    xuebu,
+                    efficiency,
+                    line_cost,
+                    settlement_cost,
+                    rate,
+                    examples,
+                    attendance,
+                    volume,
+                    values.get("ai"),
+                )
+            )
     return rows, skipped
 
 
@@ -167,11 +181,15 @@ def init_db() -> None:
             单例子结算成本 REAL,
             接通转化率 REAL,
             单量 REAL,
+            出勤 REAL,
+            人效单量 REAL,
+            AI接通数 REAL,
             PRIMARY KEY(日期, 流转模式, 学部))"""
     )
     columns = [row[1] for row in conn.execute("PRAGMA table_info(result)").fetchall()]
-    if "单量" not in columns:
-        conn.execute("ALTER TABLE result ADD COLUMN 单量 REAL")
+    for column in ("单量", "出勤", "人效单量", "AI接通数"):
+        if column not in columns:
+            conn.execute(f"ALTER TABLE result ADD COLUMN {column} REAL")
     conn.commit()
     conn.close()
 
@@ -182,7 +200,7 @@ def upsert_rows(rows: list[tuple[Any, ...]]) -> None:
     try:
         conn.execute("DELETE FROM result")
         conn.executemany(
-            "INSERT INTO result(日期, 流转模式, 学部, 人效, 线路成本, 单例子结算成本, 接通转化率, 单量) VALUES(?,?,?,?,?,?,?,?)",
+            "INSERT INTO result(日期, 流转模式, 学部, 人效, 线路成本, 单例子结算成本, 接通转化率, 单量, 出勤, 人效单量, AI接通数) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
             rows,
         )
         conn.commit()
@@ -244,7 +262,7 @@ def fetch_filtered(
         params.extend(xuebus)
 
     sql = (
-        "SELECT 日期, 流转模式, 学部, 人效, 线路成本, 单例子结算成本, 接通转化率, 单量 "
+        "SELECT 日期, 流转模式, 学部, 人效, 线路成本, 单例子结算成本, 接通转化率, 单量, 出勤, 人效单量, AI接通数 "
         "FROM result WHERE "
         + " AND ".join(where)
         + " ORDER BY 日期 DESC, "
@@ -376,9 +394,9 @@ def generate_result_xlsx(rows: list[dict[str, Any] | tuple[Any, ...]]) -> io.Byt
             ws.append([_export_value(key, row.get(key)) for key in S.RESULT_HEADERS])
         else:
             ws.append([_export_value(key, value) for key, value in zip(S.RESULT_HEADERS, row)])
-    for col, width in zip("ABCDEFG", [14, 16, 10, 10, 14, 18, 14]):
+    for col, width in zip("ABCDEFGH", [14, 16, 10, 10, 10, 14, 18, 14]):
         ws.column_dimensions[col].width = width
-    ws.auto_filter.ref = f"A1:G{max(ws.max_row, 1)}"
+    ws.auto_filter.ref = f"A1:H{max(ws.max_row, 1)}"
     ws.freeze_panes = "A2"
     buf = io.BytesIO()
     wb.save(buf)
@@ -387,6 +405,8 @@ def generate_result_xlsx(rows: list[dict[str, Any] | tuple[Any, ...]]) -> io.Byt
 
 
 def _export_value(key: str, value: Any) -> Any:
+    if key == "单量" and value is not None:
+        return int(round(float(value)))
     if key in {"人效", "线路成本", "单例子结算成本"} and value is not None:
         return round(float(value), 1)
     return value

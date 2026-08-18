@@ -398,6 +398,37 @@
     }
     .result-count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
     .result-count b { color: var(--ink); font-size: 16px; }
+    .result-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+    }
+    .summary-item {
+      min-width: 0;
+      padding-right: 12px;
+      border-right: 1px solid var(--line);
+    }
+    .summary-item:last-child { border-right: 0; padding-right: 0; }
+    .summary-label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink-muted);
+      font-size: 12px;
+      font-weight: 680;
+    }
+    .summary-value {
+      display: block;
+      color: var(--ink);
+      font-size: 20px;
+      font-weight: 760;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+    }
     .table-wrap {
       width: 100%;
       overflow: auto;
@@ -458,6 +489,14 @@
       .chart-stat { text-align: left; }
       .topbar-actions { align-items: stretch; flex-direction: column-reverse; }
       .controls { align-items: stretch; }
+      .result-summary { grid-template-columns: 1fr; }
+      .summary-item {
+        padding-right: 0;
+        padding-bottom: 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .summary-item:last-child { padding-bottom: 0; border-bottom: 0; }
       .field, .btn, .custom-range, .segmented { width: 100%; }
       .date-range-field { min-width: 0; }
       .segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -488,7 +527,7 @@
         <form action="/upload" method="post">
           <button class="btn btn-primary" type="submit">上传并更新</button>
         </form>
-        <div class="latest-badge">最新：2026-08-14</div>
+        <div class="latest-badge">最新：2026-08-16</div>
       </div>
     </header>
 
@@ -532,6 +571,10 @@
                 <summary aria-labelledby="chart-start-label"><span class="mode-summary">开始</span></summary>
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="true">开始</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-16" aria-selected="false">2026-08-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-15" aria-selected="false">2026-08-15</button>
 
                     <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
 
@@ -630,6 +673,10 @@
                 <summary aria-labelledby="chart-end-label"><span class="mode-summary">结束</span></summary>
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="true">结束</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-16" aria-selected="false">2026-08-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-15" aria-selected="false">2026-08-15</button>
 
                     <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
 
@@ -763,7 +810,7 @@
           <button class="btn btn-primary" type="submit">查询</button>
           <a class="btn btn-secondary" href="/?chart_view=7d&amp;chart_start=&amp;chart_end=&amp;table_view=latest&amp;table_start=&amp;table_end=">重置</a>
         </form>
-        <div class="chart-wrap" id="trend-chart" data-points='[{"\u603b\u5355\u91cf": 1142.0, "\u65e5\u671f": "2026-08-09", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 118.5543}, {"\u603b\u5355\u91cf": 426.0, "\u65e5\u671f": "2026-08-10", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 101.6482}, {"\u603b\u5355\u91cf": 811.0, "\u65e5\u671f": "2026-08-11", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 144.5872}, {"\u603b\u5355\u91cf": 786.0, "\u65e5\u671f": "2026-08-12", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 152.3183}, {"\u603b\u5355\u91cf": 767.0, "\u65e5\u671f": "2026-08-13", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 137.3673}, {"\u603b\u5355\u91cf": 1647.0, "\u65e5\u671f": "2026-08-14", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 91.7371}]'>
+        <div class="chart-wrap" id="trend-chart" data-points='[{"\u603b\u5355\u91cf": 786.0, "\u65e5\u671f": "2026-08-12", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 152.3878}, {"\u603b\u5355\u91cf": 767.0, "\u65e5\u671f": "2026-08-13", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 139.0435}, {"\u603b\u5355\u91cf": 1647.0, "\u65e5\u671f": "2026-08-14", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 87.1775}, {"\u603b\u5355\u91cf": 936.0, "\u65e5\u671f": "2026-08-15", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 56.2982}, {"\u603b\u5355\u91cf": 1031.0, "\u65e5\u671f": "2026-08-16", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 56.4786}]'>
           <svg class="chart-svg" role="img" aria-labelledby="trend-title" aria-describedby="trend-desc"></svg>
           <div class="chart-empty" hidden>
             <div>
@@ -808,6 +855,10 @@
                 <summary aria-labelledby="table-start-label"><span class="mode-summary">开始</span></summary>
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="true">开始</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-16" aria-selected="false">2026-08-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-15" aria-selected="false">2026-08-15</button>
 
                     <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
 
@@ -906,6 +957,10 @@
                 <summary aria-labelledby="table-end-label"><span class="mode-summary">结束</span></summary>
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="true">结束</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-16" aria-selected="false">2026-08-16</button>
+
+                    <button class="mode-option date-option" type="button" data-value="2026-08-15" aria-selected="false">2026-08-15</button>
 
                     <button class="mode-option date-option" type="button" data-value="2026-08-14" aria-selected="false">2026-08-14</button>
 
@@ -1069,12 +1124,34 @@
         <div class="table-head">
           <div>
             <h2 class="section-title" id="result-title">结果明细</h2>
-            <div class="result-count">共 <b>9</b> 行 <span>最新一天</span></div>
+            <div class="result-count">共 <b>3</b> 行 <span>最新一天</span></div>
           </div>
           <a class="btn btn-secondary" href="/download?table_view=latest&amp;table_start=&amp;table_end=">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
             下载 result.xlsx
           </a>
+        </div>
+        <div class="result-summary" aria-label="当前筛选聚合">
+          <div class="summary-item">
+            <span class="summary-label">聚合人效</span>
+            <span class="summary-value">6.9</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">总单量</span>
+            <span class="summary-value">1031</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">聚合线路成本</span>
+            <span class="summary-value">19.6</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">聚合单例子结算成本</span>
+            <span class="summary-value">56.5</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">聚合接通转化率</span>
+            <span class="summary-value">0.49%</span>
+          </div>
         </div>
         <div class="table-wrap">
 
@@ -1085,6 +1162,7 @@
                   <th>流转模式</th>
                   <th>学部</th>
                   <th>人效</th>
+                  <th>单量</th>
                   <th>线路成本</th>
                   <th>单例子结算成本</th>
                   <th>接通转化率</th>
@@ -1093,93 +1171,36 @@
               <tbody>
 
                   <tr>
-                    <td class="date-value">2026-08-14</td>
-                    <td><span class="pill mode">大神</span></td>
-                    <td><span class="pill x小学">小学</span></td>
-                    <td class="num">3.6</td>
-                    <td class="num">32.5</td>
-                    <td class="num">148.3</td>
-                    <td class="num">0.30%</td>
-                  </tr>
-
-                  <tr>
-                    <td class="date-value">2026-08-14</td>
-                    <td><span class="pill mode">大神</span></td>
-                    <td><span class="pill x初中">初中</span></td>
-                    <td class="num">3.6</td>
-                    <td class="num">26.3</td>
-                    <td class="num">142.1</td>
-                    <td class="num">0.38%</td>
-                  </tr>
-
-                  <tr>
-                    <td class="date-value">2026-08-14</td>
+                    <td class="date-value">2026-08-16</td>
                     <td><span class="pill mode">9.9池</span></td>
                     <td><span class="pill x初中">初中</span></td>
-                    <td class="num">1.7</td>
-                    <td class="num">164.8</td>
-                    <td class="num">254.8</td>
-                    <td class="num">0.05%</td>
+                    <td class="num">2.2</td>
+                    <td class="num">119</td>
+                    <td class="num">86.8</td>
+                    <td class="num">176.8</td>
+                    <td class="num">0.11%</td>
                   </tr>
 
                   <tr>
-                    <td class="date-value">2026-08-14</td>
+                    <td class="date-value">2026-08-16</td>
                     <td><span class="pill mode">爆量再植课</span></td>
                     <td><span class="pill x初中">初中</span></td>
-                    <td class="num">8.9</td>
-                    <td class="num">23.5</td>
-                    <td class="num">63.5</td>
-                    <td class="num">0.40%</td>
+                    <td class="num">9.2</td>
+                    <td class="num">297</td>
+                    <td class="num">20.4</td>
+                    <td class="num">50.4</td>
+                    <td class="num">0.47%</td>
                   </tr>
 
                   <tr>
-                    <td class="date-value">2026-08-14</td>
+                    <td class="date-value">2026-08-16</td>
                     <td><span class="pill mode">爆量再植课</span></td>
                     <td><span class="pill x高中">高中</span></td>
-                    <td class="num">8.9</td>
-                    <td class="num">6.4</td>
-                    <td class="num">46.4</td>
-                    <td class="num">1.66%</td>
-                  </tr>
-
-                  <tr>
-                    <td class="date-value">2026-08-14</td>
-                    <td><span class="pill mode">爆量未加微</span></td>
-                    <td><span class="pill x初中">初中</span></td>
-                    <td class="num">8.5</td>
-                    <td class="num">13.2</td>
-                    <td class="num">13.2</td>
-                    <td class="num">0.75%</td>
-                  </tr>
-
-                  <tr>
-                    <td class="date-value">2026-08-14</td>
-                    <td><span class="pill mode">爆量未加微</span></td>
-                    <td><span class="pill x高中">高中</span></td>
-                    <td class="num">8.5</td>
-                    <td class="num">3.0</td>
-                    <td class="num">3.0</td>
-                    <td class="num">4.28%</td>
-                  </tr>
-
-                  <tr>
-                    <td class="date-value">2026-08-14</td>
-                    <td><span class="pill mode">爆量本地化</span></td>
-                    <td><span class="pill x初中">初中</span></td>
-                    <td class="num">5.8</td>
-                    <td class="num">210.6</td>
-                    <td class="num">260.6</td>
-                    <td class="num">0.04%</td>
-                  </tr>
-
-                  <tr>
-                    <td class="date-value">2026-08-14</td>
-                    <td><span class="pill mode">爆量本地化</span></td>
-                    <td><span class="pill x高中">高中</span></td>
-                    <td class="num">5.8</td>
-                    <td class="num">60.2</td>
-                    <td class="num">110.2</td>
-                    <td class="num">0.15%</td>
+                    <td class="num">9.2</td>
+                    <td class="num">615</td>
+                    <td class="num">6.1</td>
+                    <td class="num">36.1</td>
+                    <td class="num">1.75%</td>
                   </tr>
 
               </tbody>

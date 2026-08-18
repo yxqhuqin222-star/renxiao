@@ -19,21 +19,23 @@ RESULT_HEADERS = [
     "流转模式",
     "学部",
     "人效",
+    "单量",
     "线路成本",
     "单例子结算成本",
     "接通转化率",
 ]
 
-TONGSHI_REQUIRED = {"日期", "模式", "学部", "例子数", "话单分钟数"}
-ZHUANHUA_REQUIRED = {"日期", "流转模式", "人效", "接通转化率"}
+TONGSHI_REQUIRED = {"日期", "模式", "学部", "AI接通数", "例子数", "话单分钟数"}
+ZHUANHUA_REQUIRED = {"日期", "流转模式", "单量", "出勤"}
 
 LABOR_COST_RULES = {
-    "爆量算法池": 40.0,
-    "爆量再植课": 40.0,
+    "爆量算法池": 30.0,
+    "爆量再植课": 30.0,
+    "爆量未加微": 28.0,
     "9.9池": 90.0,
     "爆量本地化": 50.0,
 }
-LINE_ONLY_COST_MODES = {"爆量未加微"}
+LINE_ONLY_COST_MODES = set()
 DSHEN_LABOR_NUMERATOR = 395.0
 DSHEN_LABOR_EXTRA = 7.0
 LINE_COST_UNIT = 0.085
