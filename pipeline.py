@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import re
 import shutil
 import sqlite3
 from datetime import date, datetime, timedelta
@@ -14,7 +13,7 @@ import openpyxl
 
 from config import settings as S
 
-DATE_RE = re.compile(S.DATE_PATTERN)
+DATE_INPUT_FORMATS = ("%Y-%m-%d", "%Y%m%d", "%Y/%m/%d")
 
 
 def normalize_date(value: Any) -> str | None:
@@ -25,7 +24,12 @@ def normalize_date(value: Any) -> str | None:
     if value is None:
         return None
     text = str(value).strip()
-    return text if DATE_RE.match(text) else None
+    for fmt in DATE_INPUT_FORMATS:
+        try:
+            return datetime.strptime(text, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return None
 
 
 def _to_float(value: Any) -> float:
@@ -93,6 +97,23 @@ def aggregate_tongshi(tongshi_rows: list[dict[str, Any]]) -> dict[tuple[str, str
     return agg
 
 
+def aggregate_mubiao(mubiao_rows: list[dict[str, Any]] | None) -> dict[tuple[str, str], float | None]:
+    targets: dict[tuple[str, str], float | None] = {}
+    if not mubiao_rows:
+        return targets
+    for row in mubiao_rows:
+        day = normalize_date(row.get("日期"))
+        mode_raw = row.get("流转模式")
+        if not day or mode_raw is None:
+            continue
+        mode = str(mode_raw).strip()
+        if not mode:
+            continue
+        value = row.get("人效目标")
+        targets[(day, mode)] = _to_float(value) if value is not None else None
+    return targets
+
+
 def labor_cost(mode: str, efficiency: float) -> float | None:
     if mode in S.LINE_ONLY_COST_MODES:
         return 0.0
@@ -104,9 +125,12 @@ def labor_cost(mode: str, efficiency: float) -> float | None:
 
 
 def compute_result(
-    tongshi_rows: list[dict[str, Any]], zhuanhua_rows: list[dict[str, Any]]
+    tongshi_rows: list[dict[str, Any]],
+    zhuanhua_rows: list[dict[str, Any]],
+    mubiao_rows: list[dict[str, Any]] | None = None,
 ) -> tuple[list[tuple[Any, ...]], list[tuple[str, str, str]]]:
     agg = aggregate_tongshi(tongshi_rows)
+    targets = aggregate_mubiao(mubiao_rows)
     by_mode: dict[tuple[str, str], dict[str, dict[str, float | None]]] = {}
     for (day, mode, xuebu), values in agg.items():
         by_mode.setdefault((day, mode), {})[xuebu] = values
@@ -154,6 +178,7 @@ def compute_result(
                     mode,
                     xuebu,
                     efficiency,
+                    targets.get((day, mode)),
                     line_cost,
                     settlement_cost,
                     rate,
@@ -187,7 +212,7 @@ def init_db() -> None:
             PRIMARY KEY(日期, 流转模式, 学部))"""
     )
     columns = [row[1] for row in conn.execute("PRAGMA table_info(result)").fetchall()]
-    for column in ("单量", "出勤", "人效单量", "AI接通数"):
+    for column in ("人效目标", "单量", "出勤", "人效单量", "AI接通数"):
         if column not in columns:
             conn.execute(f"ALTER TABLE result ADD COLUMN {column} REAL")
     conn.commit()
@@ -200,7 +225,7 @@ def upsert_rows(rows: list[tuple[Any, ...]]) -> None:
     try:
         conn.execute("DELETE FROM result")
         conn.executemany(
-            "INSERT INTO result(日期, 流转模式, 学部, 人效, 线路成本, 单例子结算成本, 接通转化率, 单量, 出勤, 人效单量, AI接通数) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO result(日期, 流转模式, 学部, 人效, 人效目标, 线路成本, 单例子结算成本, 接通转化率, 单量, 出勤, 人效单量, AI接通数) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
             rows,
         )
         conn.commit()
@@ -237,20 +262,22 @@ def fetch_filtered(
         where.append("日期 = (SELECT MAX(日期) FROM result WHERE " + _xuebu_in_sql() + ")")
         params += list(S.XUBU_WHITELIST)
     elif view == "custom":
-        if start and DATE_RE.match(start):
+        normalized_start = normalize_date(start)
+        normalized_end = normalize_date(end)
+        if normalized_start:
             where.append("日期 >= ?")
-            params.append(start)
-        if end and DATE_RE.match(end):
+            params.append(normalized_start)
+        if normalized_end:
             where.append("日期 <= ?")
-            params.append(end)
+            params.append(normalized_end)
     elif view in {"7d", "30d"}:
         days = 7 if view == "7d" else 30
         since = (datetime.now() - timedelta(days=days - 1)).strftime("%Y-%m-%d")
         where.append("日期 >= ?")
         params.append(since)
-    elif view and view != "all" and DATE_RE.match(view):
+    elif view and view != "all" and normalize_date(view):
         where.append("日期 = ?")
-        params.append(view)
+        params.append(normalize_date(view))
 
     modes = _normalize_modes(mode)
     if modes:
@@ -262,7 +289,7 @@ def fetch_filtered(
         params.extend(xuebus)
 
     sql = (
-        "SELECT 日期, 流转模式, 学部, 人效, 线路成本, 单例子结算成本, 接通转化率, 单量, 出勤, 人效单量, AI接通数 "
+        "SELECT 日期, 流转模式, 学部, 人效, 人效目标, 线路成本, 单例子结算成本, 接通转化率, 单量, 出勤, 人效单量, AI接通数 "
         "FROM result WHERE "
         + " AND ".join(where)
         + " ORDER BY 日期 DESC, "
@@ -301,20 +328,22 @@ def _apply_date_filter(where: list[str], params: list[Any], view: str, start: st
         where.append("日期 = (SELECT MAX(日期) FROM result WHERE " + _xuebu_in_sql() + ")")
         params += list(S.XUBU_WHITELIST)
     elif view == "custom":
-        if start and DATE_RE.match(start):
+        normalized_start = normalize_date(start)
+        normalized_end = normalize_date(end)
+        if normalized_start:
             where.append("日期 >= ?")
-            params.append(start)
-        if end and DATE_RE.match(end):
+            params.append(normalized_start)
+        if normalized_end:
             where.append("日期 <= ?")
-            params.append(end)
+            params.append(normalized_end)
     elif view in {"7d", "30d"}:
         days = 7 if view == "7d" else 30
         since = (datetime.now() - timedelta(days=days - 1)).strftime("%Y-%m-%d")
         where.append("日期 >= ?")
         params.append(since)
-    elif view and view != "all" and DATE_RE.match(view):
+    elif view and view != "all" and normalize_date(view):
         where.append("日期 = ?")
-        params.append(view)
+        params.append(normalize_date(view))
 
 
 def fetch_cost_trend(
@@ -394,9 +423,9 @@ def generate_result_xlsx(rows: list[dict[str, Any] | tuple[Any, ...]]) -> io.Byt
             ws.append([_export_value(key, row.get(key)) for key in S.RESULT_HEADERS])
         else:
             ws.append([_export_value(key, value) for key, value in zip(S.RESULT_HEADERS, row)])
-    for col, width in zip("ABCDEFGH", [14, 16, 10, 10, 10, 14, 18, 14]):
+    for col, width in zip("ABCDEFGHI", [14, 16, 10, 10, 10, 10, 14, 18, 14]):
         ws.column_dimensions[col].width = width
-    ws.auto_filter.ref = f"A1:H{max(ws.max_row, 1)}"
+    ws.auto_filter.ref = f"A1:I{max(ws.max_row, 1)}"
     ws.freeze_panes = "A2"
     buf = io.BytesIO()
     wb.save(buf)
@@ -407,7 +436,7 @@ def generate_result_xlsx(rows: list[dict[str, Any] | tuple[Any, ...]]) -> io.Byt
 def _export_value(key: str, value: Any) -> Any:
     if key == "单量" and value is not None:
         return int(round(float(value)))
-    if key in {"人效", "线路成本", "单例子结算成本"} and value is not None:
+    if key in {"人效", "人效目标", "线路成本", "单例子结算成本"} and value is not None:
         return round(float(value), 1)
     return value
 

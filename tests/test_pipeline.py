@@ -9,6 +9,29 @@ from config import settings as S
 
 
 class TestPipeline(unittest.TestCase):
+    def test_normalize_date_accepts_common_input_formats(self):
+        self.assertEqual("2026-08-19", pipeline.normalize_date("2026-08-19"))
+        self.assertEqual("2026-08-19", pipeline.normalize_date("20260819"))
+        self.assertEqual("2026-08-19", pipeline.normalize_date("2026/08/19"))
+        self.assertIsNone(pipeline.normalize_date("2026/19/08"))
+
+    def test_compute_result_normalizes_supported_date_formats(self):
+        tongshi_rows = [
+            {"日期": "20260819", "模式": "爆量算法池", "学部": "小学", "AI接通数": 200, "例子数": 10, "话单分钟数": 100},
+        ]
+        zhuanhua_rows = [
+            {"日期": "2026/08/19", "流转模式": "爆量算法池", "单量": 50, "出勤": 10},
+        ]
+        mubiao_rows = [
+            {"日期": "2026-08-19", "流转模式": "爆量算法池", "人效目标": 4.5},
+        ]
+
+        rows, skipped = pipeline.compute_result(tongshi_rows, zhuanhua_rows, mubiao_rows)
+
+        self.assertEqual([], skipped)
+        self.assertEqual("2026-08-19", rows[0][0])
+        self.assertEqual(4.5, rows[0][4])
+
     def test_compute_result_uses_existing_cost_rules(self):
         tongshi_rows = [
             {"日期": "2026-08-01", "模式": "大神", "学部": "小学", "AI接通数": 200, "例子数": 10, "话单分钟数": 100},
@@ -30,14 +53,14 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual([], skipped)
         by_key = {(r[1], r[2]): r for r in rows}
         self.assertAlmostEqual(by_key[("大神", "小学")][3], 5.0)
-        self.assertAlmostEqual(by_key[("大神", "小学")][4], 0.85)
-        self.assertAlmostEqual(by_key[("大神", "小学")][5], 86.85)
-        self.assertAlmostEqual(by_key[("大神", "小学")][6], 0.05)
-        self.assertAlmostEqual(by_key[("爆量算法池", "高中")][5], 30.34)
-        self.assertAlmostEqual(by_key[("爆量再植课", "小学")][5], 30.85)
-        self.assertAlmostEqual(by_key[("爆量未加微", "高中")][4], 0.85)
-        self.assertAlmostEqual(by_key[("爆量未加微", "高中")][5], 28.85)
-        self.assertAlmostEqual(by_key[("爆量本地化", "初中")][5], 50.85)
+        self.assertAlmostEqual(by_key[("大神", "小学")][5], 0.85)
+        self.assertAlmostEqual(by_key[("大神", "小学")][6], 86.85)
+        self.assertAlmostEqual(by_key[("大神", "小学")][7], 0.05)
+        self.assertAlmostEqual(by_key[("爆量算法池", "高中")][6], 30.34)
+        self.assertAlmostEqual(by_key[("爆量再植课", "小学")][6], 30.85)
+        self.assertAlmostEqual(by_key[("爆量未加微", "高中")][5], 0.85)
+        self.assertAlmostEqual(by_key[("爆量未加微", "高中")][6], 28.85)
+        self.assertAlmostEqual(by_key[("爆量本地化", "初中")][6], 50.85)
 
     def test_fetch_filtered_latest_and_custom_range(self):
         original_db = S.DB_PATH
@@ -45,18 +68,20 @@ class TestPipeline(unittest.TestCase):
             S.DB_PATH = Path(tmp) / "test.db"
             pipeline.upsert_rows(
                 [
-                    ("2026-08-01", "大神", "小学", 4.0, 10.0, 100.0, 0.01, 10.0, 2.5, 10.0, 1000.0),
-                    ("2026-08-02", "9.9池", "初中", 2.0, 20.0, 110.0, 0.02, 20.0, 10.0, 20.0, 1000.0),
-                    ("2026-08-03", "爆量算法池", "其他", 5.0, 30.0, 120.0, 0.03, 30.0, 6.0, 30.0, 1000.0),
+                    ("2026-08-01", "大神", "小学", 4.0, 4.5, 10.0, 100.0, 0.01, 10.0, 2.5, 10.0, 1000.0),
+                    ("2026-08-02", "9.9池", "初中", 2.0, 2.5, 20.0, 110.0, 0.02, 20.0, 10.0, 20.0, 1000.0),
+                    ("2026-08-03", "爆量算法池", "其他", 5.0, 5.5, 30.0, 120.0, 0.03, 30.0, 6.0, 30.0, 1000.0),
                 ]
             )
 
             latest = pipeline.fetch_filtered()
             custom = pipeline.fetch_filtered(view="custom", start="2026-08-01", end="2026-08-02")
+            custom_compact_dates = pipeline.fetch_filtered(view="custom", start="20260801", end="2026/08/02")
             xuebu_filtered = pipeline.fetch_filtered(view="all", xuebu=["小学", "初中"])
 
             self.assertEqual(["2026-08-02"], [row["日期"] for row in latest])
             self.assertEqual(["2026-08-02", "2026-08-01"], [row["日期"] for row in custom])
+            self.assertEqual(["2026-08-02", "2026-08-01"], [row["日期"] for row in custom_compact_dates])
             self.assertEqual(["初中", "小学"], sorted(row["学部"] for row in xuebu_filtered))
         S.DB_PATH = original_db
 
@@ -66,11 +91,11 @@ class TestPipeline(unittest.TestCase):
             S.DB_PATH = Path(tmp) / "test.db"
             pipeline.upsert_rows(
                 [
-                    ("2026-08-01", "大神", "小学", 4.0, 10.0, 100.0, 0.01, 10.0, 2.5, 10.0, 1000.0),
-                    ("2026-08-01", "爆量算法池", "高中", 5.0, 20.0, 40.0, 0.02, 30.0, 6.0, 30.0, 1500.0),
-                    ("2026-08-01", "9.9池", "初中", 2.0, 30.0, 160.0, 0.03, 60.0, 30.0, 60.0, 2000.0),
-                    ("2026-08-02", "大神", "小学", 4.0, 10.0, 120.0, 0.01, 20.0, 5.0, 20.0, 2000.0),
-                    ("2026-08-02", "爆量算法池", "高中", 5.0, 20.0, 60.0, 0.02, 20.0, 4.0, 20.0, 1000.0),
+                    ("2026-08-01", "大神", "小学", 4.0, 4.5, 10.0, 100.0, 0.01, 10.0, 2.5, 10.0, 1000.0),
+                    ("2026-08-01", "爆量算法池", "高中", 5.0, 5.5, 20.0, 40.0, 0.02, 30.0, 6.0, 30.0, 1500.0),
+                    ("2026-08-01", "9.9池", "初中", 2.0, 2.5, 30.0, 160.0, 0.03, 60.0, 30.0, 60.0, 2000.0),
+                    ("2026-08-02", "大神", "小学", 4.0, 4.5, 10.0, 120.0, 0.01, 20.0, 5.0, 20.0, 2000.0),
+                    ("2026-08-02", "爆量算法池", "高中", 5.0, 5.5, 20.0, 60.0, 0.02, 20.0, 4.0, 20.0, 1000.0),
                 ]
             )
 
@@ -90,6 +115,7 @@ class TestPipeline(unittest.TestCase):
                     "流转模式": "大神",
                     "学部": "小学",
                     "人效": 4.12,
+                    "人效目标": 4.56,
                     "单量": 12.34,
                     "线路成本": 1.23,
                     "单例子结算成本": 2.34,
@@ -99,12 +125,13 @@ class TestPipeline(unittest.TestCase):
         )
         wb = openpyxl.load_workbook(buf, data_only=True)
         ws = wb.active
-        self.assertEqual(S.RESULT_HEADERS, [ws.cell(1, col).value for col in range(1, 9)])
-        self.assertEqual("A1:H2", ws.auto_filter.ref)
+        self.assertEqual(S.RESULT_HEADERS, [ws.cell(1, col).value for col in range(1, 10)])
+        self.assertEqual("A1:I2", ws.auto_filter.ref)
         self.assertEqual(4.1, ws.cell(2, 4).value)
-        self.assertEqual(12, ws.cell(2, 5).value)
-        self.assertEqual(1.2, ws.cell(2, 6).value)
-        self.assertEqual(2.3, ws.cell(2, 7).value)
+        self.assertEqual(4.6, ws.cell(2, 5).value)
+        self.assertEqual(12, ws.cell(2, 6).value)
+        self.assertEqual(1.2, ws.cell(2, 7).value)
+        self.assertEqual(2.3, ws.cell(2, 8).value)
 
 
 if __name__ == "__main__":

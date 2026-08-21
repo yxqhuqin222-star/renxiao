@@ -221,6 +221,7 @@ def index():
     for row in rows:
         item = dict(row)
         item["人效_display"] = _fmt_num(row["人效"], 1)
+        item["人效目标_display"] = _fmt_num(row["人效目标"], 1)
         item["单量_display"] = _fmt_int(row["单量"])
         item["线路成本_display"] = _fmt_cost(row["线路成本"])
         item["单例子结算成本_display"] = _fmt_cost(row["单例子结算成本"])
@@ -253,15 +254,21 @@ def index():
 def upload():
     tongshi_path = S.FIXED_TONGSHI_PATH
     zhuanhua_path = S.FIXED_ZHUANHUA_PATH
-    missing_files = [path.name for path in (tongshi_path, zhuanhua_path) if not path.exists()]
+    mubiao_path = S.FIXED_MUBIAO_PATH
+    missing_files = [path.name for path in (tongshi_path, zhuanhua_path, mubiao_path) if not path.exists()]
     if missing_files:
         return redirect(url_for("index", status="固定文件缺失：" + "、".join(missing_files)))
     tongshi_rows = load_sheet(tongshi_path)
     zhuanhua_rows = load_sheet(zhuanhua_path)
-    missing = validate_headers(tongshi_rows, S.TONGSHI_REQUIRED) + validate_headers(zhuanhua_rows, S.ZHUANHUA_REQUIRED)
+    mubiao_rows = load_sheet(mubiao_path)
+    missing = (
+        validate_headers(tongshi_rows, S.TONGSHI_REQUIRED)
+        + validate_headers(zhuanhua_rows, S.ZHUANHUA_REQUIRED)
+        + validate_headers(mubiao_rows, S.MUBIAO_REQUIRED)
+    )
     if missing:
         return redirect(url_for("index", status="表头缺失：" + "、".join(sorted(set(missing)))))
-    rows, skipped = compute_result(tongshi_rows, zhuanhua_rows)
+    rows, skipped = compute_result(tongshi_rows, zhuanhua_rows, mubiao_rows)
     upsert_rows(rows)
     return redirect(url_for("index", status=f"已更新 {len(rows)} 行，跳过 {len(skipped)} 行"))
 

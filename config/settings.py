@@ -13,12 +13,14 @@ SEED_DB_PATH = SEED_DATA_DIR / "dashboard.db"
 OUTPUT_DIR = BASE_DIR / "output"
 FIXED_TONGSHI_PATH = UPLOAD_DIR / "tongshi_demo.xlsx"
 FIXED_ZHUANHUA_PATH = UPLOAD_DIR / "zhuanhua_demo.xlsx"
+FIXED_MUBIAO_PATH = UPLOAD_DIR / "renxiaomubiao_demo.xlsx"
 
 RESULT_HEADERS = [
     "日期",
     "流转模式",
     "学部",
     "人效",
+    "人效目标",
     "单量",
     "线路成本",
     "单例子结算成本",
@@ -27,6 +29,7 @@ RESULT_HEADERS = [
 
 TONGSHI_REQUIRED = {"日期", "模式", "学部", "AI接通数", "例子数", "话单分钟数"}
 ZHUANHUA_REQUIRED = {"日期", "流转模式", "单量", "出勤"}
+MUBIAO_REQUIRED = {"日期", "流转模式", "人效目标"}
 
 LABOR_COST_RULES = {
     "爆量算法池": 30.0,
