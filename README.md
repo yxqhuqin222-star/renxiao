@@ -19,10 +19,10 @@
 - 本地 Flask 服务：用于上传、重新计算、下载和完整交互。
 - GitHub / GitHub Pages：用于保存代码和公开查看静态前端快照。
 
-### GitHub Pages 静态前端
+### GitHub Pages 静态前端（只读看板）
 
-执行下面命令可以导出当前首页快照到 `docs/index.html`，用于 GitHub Pages：
+执行下面命令可以导出当前首页的**只读快照**到 `docs/index.html`，用于 GitHub Pages 公网访问：
 
-    .venv/bin/python scripts/export_static.py
+    .venv/bin/python scripts/export_readonly.py
 
-静态页适合公开查看前端仪表盘；上传、下载和重新计算仍需要 Flask 服务。
+该脚本会剥离上传表单、下载链接和筛选表单，只保留查看功能（趋势图、结果表、汇总）。上传、下载和重新计算仍需要本地 Flask 服务。重新发布时直接运行此命令并推送 `docs/` 即可。
