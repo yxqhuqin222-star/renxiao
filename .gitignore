@@ -4,8 +4,10 @@ __pycache__/
 .pytest_cache/
 .venv/
 .vercel/
+.env
 .env.local
 docs/.env
 docs/.edgeone/
 .workbuddy/
+scripts/publish_readonly.sh
 output/logs/
