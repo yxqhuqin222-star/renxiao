@@ -114,24 +114,48 @@ CLIENT_JS = r"""
   function aggregate(rows) {
     var totalExamples = rows.reduce(function (s, r) { return s + (Number(r['单量']) || 0); }, 0);
     if (totalExamples <= 0) {
-      return { efficiency: '-', case_cost: '-', line_cost: '-', rate: '-', total_examples: '-' };
+      return { efficiency: '-', target: '-', case_cost: '-', line_cost: '-', rate: '-', total_examples: '-' };
     }
     var caseCost = rows.reduce(function (s, r) { return s + (Number(r['单例子结算成本']) || 0) * (Number(r['单量']) || 0); }, 0) / totalExamples;
     var lineCost = rows.reduce(function (s, r) { return s + (Number(r['线路成本']) || 0) * (Number(r['单量']) || 0); }, 0) / totalExamples;
     var ai = rows.reduce(function (s, r) { return s + (Number(r['AI接通数']) || 0); }, 0);
     var byDayMode = {};
-    rows.forEach(function (r) { byDayMode[r['日期'] + '|' + r['流转模式']] = r; });
+    rows.forEach(function (r) {
+      var key = r['日期'] + '|' + r['流转模式'];
+      if (!byDayMode[key]) byDayMode[key] = r;
+    });
     var att = Object.keys(byDayMode).reduce(function (s, k) { return s + (Number(byDayMode[k]['出勤']) || 0); }, 0);
     var effVol = Object.keys(byDayMode).reduce(function (s, k) { return s + (Number(byDayMode[k]['人效单量']) || 0); }, 0);
+    var targetAtt = Object.keys(byDayMode).reduce(function (s, k) {
+      return byDayMode[k]['人效目标'] == null ? s : s + (Number(byDayMode[k]['出勤']) || 0);
+    }, 0);
+    var targetVol = Object.keys(byDayMode).reduce(function (s, k) {
+      return byDayMode[k]['人效目标'] == null ? s : s + (Number(byDayMode[k]['人效目标']) || 0) * (Number(byDayMode[k]['出勤']) || 0);
+    }, 0);
     var efficiency = att ? effVol / att : 0;
+    var target = targetAtt ? targetVol / targetAtt : null;
     var rate = ai ? totalExamples / ai : 0;
     return {
       efficiency: fmtNum(efficiency, 1),
+      target: target == null ? '-' : fmtNum(target, 1),
       case_cost: fmtCost(caseCost),
       line_cost: fmtCost(lineCost),
       rate: fmtRate(rate),
       total_examples: fmtInt(totalExamples)
     };
+  }
+
+  function aggregateByDate(rows) {
+    var byDate = {};
+    rows.forEach(function (r) {
+      var d = r['日期'];
+      (byDate[d] || (byDate[d] = [])).push(r);
+    });
+    return Object.keys(byDate).sort().reverse().map(function (d) {
+      var agg = aggregate(byDate[d]);
+      agg.date = d;
+      return agg;
+    });
   }
 
   function viewLabel(f) {
@@ -167,12 +191,39 @@ CLIENT_JS = r"""
         '</tr></thead><tbody>' + body + '</tbody></table>';
     }
     var agg = aggregate(rows);
-    document.querySelector('#results .result-summary').innerHTML =
-      '<div class="summary-item"><span class="summary-label">聚合人效</span><span class="summary-value">' + agg.efficiency + '</span></div>' +
-      '<div class="summary-item"><span class="summary-label">总单量</span><span class="summary-value">' + agg.total_examples + '</span></div>' +
-      '<div class="summary-item"><span class="summary-label">聚合线路成本</span><span class="summary-value">' + agg.line_cost + '</span></div>' +
-      '<div class="summary-item"><span class="summary-label">聚合单例子结算成本</span><span class="summary-value">' + agg.case_cost + '</span></div>' +
-      '<div class="summary-item"><span class="summary-label">聚合接通转化率</span><span class="summary-value">' + agg.rate + '</span></div>';
+    var summary = document.querySelector('#results .result-summary');
+    if (summary) {
+      summary.innerHTML =
+        '<div class="summary-item"><span class="summary-label">人效</span><span class="summary-value">' + agg.efficiency + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">人效目标</span><span class="summary-value">' + agg.target + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">单量</span><span class="summary-value">' + agg.total_examples + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">线路成本</span><span class="summary-value">' + agg.line_cost + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">单例子结算成本</span><span class="summary-value">' + agg.case_cost + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">接通转化率</span><span class="summary-value">' + agg.rate + '</span></div>';
+    }
+    var daily = aggregateByDate(rows);
+    var dailyWrap = document.querySelector('#results .aggregate-table-wrap');
+    if (dailyWrap) {
+      if (!daily.length) {
+        dailyWrap.innerHTML = '<div class="empty"><strong>没有可聚合的数据</strong><br>调整筛选条件后重新查询。</div>';
+      } else {
+        var dailyBody = daily.map(function (r) {
+          return '<tr>' +
+            '<td class="date-value">' + esc(r.date) + '</td>' +
+            '<td class="num">' + r.efficiency + '</td>' +
+            '<td class="num">' + r.target + '</td>' +
+            '<td class="num">' + r.total_examples + '</td>' +
+            '<td class="num">' + r.line_cost + '</td>' +
+            '<td class="num">' + r.case_cost + '</td>' +
+            '<td class="num">' + r.rate + '</td>' +
+            '</tr>';
+        }).join('');
+        dailyWrap.innerHTML = '<table class="aggregate-table"><thead><tr>' +
+          '<th>日期</th><th>人效</th><th>人效目标</th><th>单量</th><th>线路成本</th>' +
+          '<th>单例子结算成本</th><th>接通转化率</th>' +
+          '</tr></thead><tbody>' + dailyBody + '</tbody></table>';
+      }
+    }
     document.querySelector('#results .result-count').innerHTML =
       '共 <b>' + rows.length + '</b> 行 <span>' + viewLabel(f) + '</span>';
   }

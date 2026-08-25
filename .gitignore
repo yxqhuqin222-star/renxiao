@@ -5,4 +5,7 @@ __pycache__/
 .venv/
 .vercel/
 .env.local
+docs/.env
+docs/.edgeone/
+.workbuddy/
 output/logs/

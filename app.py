@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from flask import Flask, abort, redirect, render_template, request, send_file, send_from_directory, url_for
@@ -155,6 +156,7 @@ def _table_aggregate(rows: list[dict]) -> dict[str, str]:
     if total_examples <= 0:
         return {
             "efficiency": "-",
+            "target": "-",
             "case_cost": "-",
             "line_cost": "-",
             "rate": "-",
@@ -169,12 +171,133 @@ def _table_aggregate(rows: list[dict]) -> dict[str, str]:
         by_day_mode.setdefault(key, row)
     total_attendance = sum(float(row.get("出勤") or 0) for row in by_day_mode.values())
     total_efficiency_volume = sum(float(row.get("人效单量") or 0) for row in by_day_mode.values())
+    target_attendance = sum(float(row.get("出勤") or 0) for row in by_day_mode.values() if row.get("人效目标") is not None)
+    target_volume = sum(
+        float(row.get("人效目标") or 0) * float(row.get("出勤") or 0)
+        for row in by_day_mode.values()
+        if row.get("人效目标") is not None
+    )
     return {
         "efficiency": _fmt_num(total_efficiency_volume / total_attendance, 1) if total_attendance else "-",
+        "target": _fmt_num(target_volume / target_attendance, 1) if target_attendance else "-",
         "case_cost": _fmt_cost(case_cost),
         "line_cost": _fmt_cost(line_cost),
         "rate": _fmt_rate(total_examples / ai_connected) if ai_connected else "-",
         "total_examples": _fmt_int(total_examples),
+    }
+
+
+def _table_daily_aggregates(rows: list[dict]) -> list[dict[str, str]]:
+    by_date: dict[str, list[dict]] = {}
+    for row in rows:
+        by_date.setdefault(str(row["日期"]), []).append(row)
+    return [
+        {
+            "date": day,
+            **_table_aggregate(day_rows),
+        }
+        for day, day_rows in sorted(by_date.items(), reverse=True)
+    ]
+
+
+def _parse_day(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def _date_delta(day: str | None, days: int) -> str | None:
+    parsed = _parse_day(day)
+    if not parsed:
+        return None
+    return (parsed - timedelta(days=days)).strftime("%Y-%m-%d")
+
+
+def _fmt_delta(value: object, digits: int = 1) -> str:
+    if value is None:
+        return "-"
+    number = float(value)
+    if abs(number) < 0.0000001:
+        return "0.0" if digits == 1 else f"{0:.{digits}f}"
+    sign = "+" if number > 0 else ""
+    return f"{sign}{number:.{digits}f}"
+
+
+def _daily_broadcast(latest: str | None, modes: list[str]) -> dict[str, object]:
+    if not latest:
+        return {
+            "date_label": "暂无数据",
+            "latest_date": None,
+            "yesterday": None,
+            "last_week": None,
+            "overview": _table_aggregate([]),
+            "row_count": 0,
+            "groups": [],
+            "notice": "上传并更新后会在这里生成每日播报。",
+        }
+
+    yesterday = _date_delta(latest, 1)
+    last_week = _date_delta(latest, 7)
+    today_rows = fetch_filtered(view=latest)
+    yesterday_rows = fetch_filtered(view=yesterday) if yesterday else []
+    last_week_rows = fetch_filtered(view=last_week) if last_week else []
+
+    def by_key(rows: list[dict]) -> dict[tuple[str, str], dict]:
+        return {(str(row["学部"]), str(row["流转模式"])): row for row in rows}
+
+    yesterday_by_key = by_key(yesterday_rows)
+    last_week_by_key = by_key(last_week_rows)
+    today_by_key = by_key(today_rows)
+    today_modes = {str(row["流转模式"]) for row in today_rows}
+    ordered_modes = [mode for mode in modes if mode in today_modes]
+    ordered_modes.extend(sorted(today_modes - set(ordered_modes)))
+
+    groups = []
+    for xuebu in S.XUBU_WHITELIST:
+        rows = []
+        for mode in ordered_modes:
+            row = today_by_key.get((xuebu, mode))
+            yesterday_row = yesterday_by_key.get((xuebu, mode))
+            last_week_row = last_week_by_key.get((xuebu, mode))
+            if not row:
+                continue
+            line_cost = row.get("线路成本")
+            case_cost = row.get("单例子结算成本")
+            yesterday_line_cost = yesterday_row.get("线路成本") if yesterday_row else None
+            yesterday_case_cost = yesterday_row.get("单例子结算成本") if yesterday_row else None
+            last_week_line_cost = last_week_row.get("线路成本") if last_week_row else None
+            last_week_case_cost = last_week_row.get("单例子结算成本") if last_week_row else None
+            rows.append(
+                {
+                    "mode": mode,
+                    "line_cost": _fmt_cost(line_cost),
+                    "line_vs_yesterday": _fmt_delta(float(line_cost) - float(yesterday_line_cost)) if line_cost is not None and yesterday_line_cost is not None else "-",
+                    "line_vs_last_week": _fmt_delta(float(line_cost) - float(last_week_line_cost)) if line_cost is not None and last_week_line_cost is not None else "-",
+                    "case_cost": _fmt_cost(case_cost),
+                    "case_vs_yesterday": _fmt_delta(float(case_cost) - float(yesterday_case_cost)) if case_cost is not None and yesterday_case_cost is not None else "-",
+                    "case_vs_last_week": _fmt_delta(float(case_cost) - float(last_week_case_cost)) if case_cost is not None and last_week_case_cost is not None else "-",
+                }
+            )
+        groups.append({"xuebu": xuebu, "rows": rows})
+
+    expected_pairs = len(S.XUBU_WHITELIST) * max(len(modes), 1)
+    missing_note = ""
+    if today_rows and len(today_rows) < expected_pairs:
+        missing_note = f"今日只有 {len(today_rows)} 行，可能并未覆盖全部学部/流转模式；空值按无数据处理，不按 0 计算。"
+    notice = missing_note or "今日数据已按最新日期生成，成本对比为当前值减对比日值。"
+
+    return {
+        "date_label": latest[5:].replace("-", "月") + "日",
+        "latest_date": latest,
+        "yesterday": yesterday,
+        "last_week": last_week,
+        "overview": _table_aggregate(today_rows),
+        "row_count": len(today_rows),
+        "groups": groups,
+        "notice": notice,
     }
 
 
@@ -204,6 +327,8 @@ def _download_url(filters: dict[str, object]) -> str:
 def index():
     chart_filters = _filters_from_request("chart", default_view="7d")
     table_filters = _filters_from_request("table", include_xuebu=True, default_view="latest")
+    all_modes = distinct_modes()
+    current_latest_date = latest_date()
     rows = fetch_filtered(
         view=str(table_filters["view"]),
         start=table_filters["start"],
@@ -233,10 +358,12 @@ def index():
         rows=formatted_rows,
         metrics=_metrics(rows),
         table_aggregate=_table_aggregate(rows),
+        table_daily_aggregates=_table_daily_aggregates(rows),
         dates=distinct_dates(),
-        modes=distinct_modes(),
+        modes=all_modes,
         xuebus=S.XUBU_WHITELIST,
-        latest_date=latest_date(),
+        latest_date=current_latest_date,
+        daily_broadcast=_daily_broadcast(current_latest_date, all_modes),
         chart_filters=chart_filters,
         table_filters=table_filters,
         chart_preserve_args=_template_preserve_args("table", table_filters),

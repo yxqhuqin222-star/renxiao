@@ -302,6 +302,157 @@
     .btn-primary:hover { background: var(--primary-hover); }
     .btn-secondary { background: #fff; color: var(--ink-muted); border-color: var(--line-strong); }
     .btn-secondary:hover { color: var(--ink); border-color: var(--ink-soft); }
+    .broadcast-button {
+      position: relative;
+      width: 42px;
+      padding: 0;
+      color: var(--primary);
+      background: var(--primary-soft);
+      border-color: transparent;
+      box-shadow: 0 6px 18px rgba(49, 92, 246, .12);
+    }
+    .broadcast-button::after {
+      position: absolute;
+      inset: -5px;
+      content: "";
+      border-radius: calc(var(--radius-sm) + 5px);
+      background: rgba(49, 92, 246, .14);
+      opacity: 0;
+      transform: scale(.78);
+      pointer-events: none;
+    }
+    .broadcast-button-text { display: none; }
+    .broadcast-button:hover {
+      color: #fff;
+      background: var(--primary);
+      box-shadow: 0 8px 22px rgba(49, 92, 246, .20);
+    }
+    .broadcast-button[aria-expanded="true"] {
+      color: #fff;
+      background: var(--primary);
+    }
+    .broadcast-button.is-unread::after {
+      animation: broadcastPulse 1.8s ease-out infinite;
+    }
+    .broadcast-button.is-unread svg {
+      transform-origin: 45% 50%;
+      animation: broadcastBell 1.8s ease-in-out infinite;
+    }
+    @keyframes broadcastPulse {
+      0%, 100% {
+        opacity: 0;
+        transform: scale(.78);
+      }
+      42% {
+        opacity: 1;
+        transform: scale(1.12);
+      }
+    }
+    @keyframes broadcastBell {
+      0%, 45%, 100% { transform: rotate(0deg); }
+      10% { transform: rotate(-9deg); }
+      20% { transform: rotate(8deg); }
+      30% { transform: rotate(-5deg); }
+    }
+    .broadcast-panel {
+      margin: -6px 0 16px;
+      padding: 18px;
+      border: 1px solid #dce4ff;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+      box-shadow: 0 12px 30px rgba(49, 92, 246, .08);
+    }
+    .broadcast-panel[hidden] { display: none; }
+    .broadcast-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .broadcast-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 780;
+    }
+    .broadcast-meta {
+      margin-top: 4px;
+      color: var(--ink-muted);
+      font-size: 12.5px;
+      font-variant-numeric: tabular-nums;
+    }
+    .broadcast-notice {
+      margin: 0;
+      max-width: 520px;
+      color: var(--warning);
+      font-size: 12.5px;
+      text-align: right;
+    }
+    .broadcast-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .broadcast-stat {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+    .broadcast-stat span {
+      display: block;
+      color: var(--ink-muted);
+      font-size: 12px;
+      font-weight: 680;
+    }
+    .broadcast-stat b {
+      display: block;
+      margin-top: 2px;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.25;
+      font-variant-numeric: tabular-nums;
+    }
+    .broadcast-groups {
+      display: grid;
+      gap: 12px;
+    }
+    .broadcast-group {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+      overflow: hidden;
+    }
+    .broadcast-group-title {
+      margin: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-soft);
+      font-size: 13px;
+      font-weight: 760;
+    }
+    .broadcast-table-wrap { overflow: auto; }
+    .broadcast-table {
+      min-width: 720px;
+      font-size: 13px;
+    }
+    .broadcast-table th,
+    .broadcast-table td {
+      padding: 9px 10px;
+    }
+    .delta-up { color: var(--danger); }
+    .delta-down { color: var(--success); }
+    @media (prefers-reduced-motion: reduce) {
+      .broadcast-button.is-unread::after,
+      .broadcast-button.is-unread svg {
+        animation: none;
+      }
+      .broadcast-button.is-unread::after {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
     .chart-card { padding-bottom: 22px; }
     .chart-head {
       display: flex;
@@ -395,13 +546,32 @@
       gap: 16px;
       margin-bottom: 16px;
     }
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
     .result-count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
     .result-count b { color: var(--ink); font-size: 16px; }
+    .aggregate-panel { margin-bottom: 16px; }
+    .aggregate-panel[hidden] { display: none; }
+    .aggregate-table-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+    }
+    .aggregate-table {
+      min-width: 780px;
+      background: var(--surface-soft);
+    }
     .result-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 12px;
-      margin-bottom: 16px;
       padding: 14px;
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
@@ -487,7 +657,12 @@
       .chart-head { align-items: stretch; flex-direction: column; }
       .chart-stat { text-align: left; }
       .topbar-actions { align-items: stretch; flex-direction: column-reverse; }
+      .broadcast-button { width: 100%; }
+      .broadcast-button-text { display: inline; }
+      .broadcast-head { flex-direction: column; }
+      .broadcast-notice { text-align: left; }
       .controls { align-items: stretch; }
+      .table-actions { justify-content: stretch; }
       .result-summary { grid-template-columns: 1fr; }
       .summary-item {
         padding-right: 0;
@@ -526,6 +701,10 @@
         <form action="{{ url_for('upload') }}" method="post">
           <button class="btn btn-primary" type="submit">上传并更新</button>
         </form>
+        <button class="btn broadcast-button js-panel-toggle js-broadcast-button" type="button" aria-expanded="false" aria-controls="daily-broadcast" aria-label="查看每日播报" data-broadcast-date="{{ daily_broadcast.latest_date or '' }}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l6 5V5l-6 5H4Z"/><path d="M18 9a4 4 0 0 1 0 6"/><path d="M20.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+          <span class="broadcast-button-text">每日播报</span>
+        </button>
         <div class="latest-badge">最新：{{ latest_date or "暂无数据" }}</div>
       </div>
     </header>
@@ -533,6 +712,67 @@
     {% if status %}
       <div class="status" role="status">{{ status }}</div>
     {% endif %}
+
+    <section class="broadcast-panel" id="daily-broadcast" aria-labelledby="daily-broadcast-title" hidden>
+      <div class="broadcast-head">
+        <div>
+          <h2 class="broadcast-title" id="daily-broadcast-title">每日播报｜{{ daily_broadcast.date_label }}</h2>
+          <div class="broadcast-meta">
+            最新数据：{{ daily_broadcast.latest_date or "暂无" }}；
+            昨日：{{ daily_broadcast.yesterday or "-" }}；
+            上周同日：{{ daily_broadcast.last_week or "-" }}
+          </div>
+        </div>
+        <p class="broadcast-notice">{{ daily_broadcast.notice }}</p>
+      </div>
+      <div class="broadcast-summary" aria-label="今日核心指标">
+        <div class="broadcast-stat"><span>数据行数</span><b>{{ daily_broadcast.row_count }}</b></div>
+        <div class="broadcast-stat"><span>单量</span><b>{{ daily_broadcast.overview.total_examples }}</b></div>
+        <div class="broadcast-stat"><span>人效</span><b>{{ daily_broadcast.overview.efficiency }}</b></div>
+        <div class="broadcast-stat"><span>线路成本</span><b>{{ daily_broadcast.overview.line_cost }}</b></div>
+        <div class="broadcast-stat"><span>单例子结算成本</span><b>{{ daily_broadcast.overview.case_cost }}</b></div>
+        <div class="broadcast-stat"><span>接通转化率</span><b>{{ daily_broadcast.overview.rate }}</b></div>
+      </div>
+      <div class="broadcast-groups">
+        {% for group in daily_broadcast.groups %}
+          <div class="broadcast-group">
+            <h3 class="broadcast-group-title">{{ group.xuebu }}</h3>
+            {% if group.rows %}
+              <div class="broadcast-table-wrap">
+                <table class="broadcast-table">
+                  <thead>
+                    <tr>
+                      <th>流转模式</th>
+                      <th>线路成本</th>
+                      <th>较昨日</th>
+                      <th>较上周同日</th>
+                      <th>单例子结算成本</th>
+                      <th>较昨日</th>
+                      <th>较上周同日</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in group.rows %}
+                      <tr>
+                        <td><span class="pill mode">{{ row.mode }}</span></td>
+                        <td class="num">{{ row.line_cost }}</td>
+                        <td class="num {{ 'delta-down' if row.line_vs_yesterday.startswith('-') else 'delta-up' if row.line_vs_yesterday.startswith('+') else '' }}">{{ row.line_vs_yesterday }}</td>
+                        <td class="num {{ 'delta-down' if row.line_vs_last_week.startswith('-') else 'delta-up' if row.line_vs_last_week.startswith('+') else '' }}">{{ row.line_vs_last_week }}</td>
+                        <td class="num">{{ row.case_cost }}</td>
+                        <td class="num {{ 'delta-down' if row.case_vs_yesterday.startswith('-') else 'delta-up' if row.case_vs_yesterday.startswith('+') else '' }}">{{ row.case_vs_yesterday }}</td>
+                        <td class="num {{ 'delta-down' if row.case_vs_last_week.startswith('-') else 'delta-up' if row.case_vs_last_week.startswith('+') else '' }}">{{ row.case_vs_last_week }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="empty">今日暂无{{ group.xuebu }}数据。</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
 
     <div class="stack">
       <section class="card chart-card" aria-labelledby="trend-title">
@@ -703,31 +943,78 @@
             <h2 class="section-title" id="result-title">结果明细</h2>
             <div class="result-count">共 <b>{{ rows|length }}</b> 行 <span>{{ view_label }}</span></div>
           </div>
-          <a class="btn btn-secondary" href="{{ download_url }}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
-            下载 result.xlsx
-          </a>
+          <div class="table-actions">
+            <button class="btn btn-secondary js-panel-toggle" type="button" aria-expanded="false" aria-controls="aggregate-panel">聚合数据</button>
+            <button class="btn btn-secondary js-panel-toggle" type="button" aria-expanded="false" aria-controls="day-aggregate-panel">day聚合</button>
+            <a class="btn btn-secondary" href="{{ download_url }}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+              下载 result.xlsx
+            </a>
+          </div>
         </div>
-        <div class="result-summary" aria-label="当前筛选聚合">
-          <div class="summary-item">
-            <span class="summary-label">聚合人效</span>
-            <span class="summary-value">{{ table_aggregate.efficiency }}</span>
+        <div class="aggregate-panel" id="aggregate-panel" hidden>
+          <div class="result-summary" aria-label="当前筛选聚合数据">
+            <div class="summary-item">
+              <span class="summary-label">人效</span>
+              <span class="summary-value">{{ table_aggregate.efficiency }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">人效目标</span>
+              <span class="summary-value">{{ table_aggregate.target }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">单量</span>
+              <span class="summary-value">{{ table_aggregate.total_examples }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">线路成本</span>
+              <span class="summary-value">{{ table_aggregate.line_cost }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">单例子结算成本</span>
+              <span class="summary-value">{{ table_aggregate.case_cost }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">接通转化率</span>
+              <span class="summary-value">{{ table_aggregate.rate }}</span>
+            </div>
           </div>
-          <div class="summary-item">
-            <span class="summary-label">总单量</span>
-            <span class="summary-value">{{ table_aggregate.total_examples }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">聚合线路成本</span>
-            <span class="summary-value">{{ table_aggregate.line_cost }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">聚合单例子结算成本</span>
-            <span class="summary-value">{{ table_aggregate.case_cost }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">聚合接通转化率</span>
-            <span class="summary-value">{{ table_aggregate.rate }}</span>
+        </div>
+        <div class="aggregate-panel" id="day-aggregate-panel" hidden>
+          <div class="aggregate-table-wrap" aria-label="当前筛选 day 聚合数据">
+            {% if table_daily_aggregates %}
+              <table class="aggregate-table">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>人效</th>
+                    <th>人效目标</th>
+                    <th>单量</th>
+                    <th>线路成本</th>
+                    <th>单例子结算成本</th>
+                    <th>接通转化率</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in table_daily_aggregates %}
+                    <tr>
+                      <td class="date-value">{{ row.date }}</td>
+                      <td class="num">{{ row.efficiency }}</td>
+                      <td class="num">{{ row.target }}</td>
+                      <td class="num">{{ row.total_examples }}</td>
+                      <td class="num">{{ row.line_cost }}</td>
+                      <td class="num">{{ row.case_cost }}</td>
+                      <td class="num">{{ row.rate }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty">
+                <strong>没有可聚合的数据</strong><br>
+                调整筛选条件后重新查询。
+              </div>
+            {% endif %}
           </div>
         </div>
         <div class="table-wrap">
@@ -827,6 +1114,50 @@
         }
       });
     });
+
+    document.querySelectorAll(".js-panel-toggle").forEach((toggle) => {
+      const panel = document.getElementById(toggle.getAttribute("aria-controls"));
+      if (!panel) {
+        return;
+      }
+      toggle.addEventListener("click", () => {
+        const willOpen = panel.hidden;
+        panel.hidden = !willOpen;
+        toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      });
+    });
+
+    const broadcastButton = document.querySelector(".js-broadcast-button");
+    if (broadcastButton) {
+      const broadcastDate = broadcastButton.dataset.broadcastDate;
+      const storageKey = broadcastDate ? `renxiao-daily-broadcast-read:${broadcastDate}` : "";
+      const broadcastPanel = document.getElementById(broadcastButton.getAttribute("aria-controls"));
+      const refreshBroadcastLabel = () => {
+        const isOpen = broadcastPanel && !broadcastPanel.hidden;
+        const isUnread = broadcastButton.classList.contains("is-unread");
+        broadcastButton.setAttribute("aria-label", isOpen ? "收起每日播报" : isUnread ? "查看每日播报，有未读更新" : "查看每日播报");
+      };
+      const markBroadcastRead = () => {
+        broadcastButton.classList.remove("is-unread");
+        if (storageKey) {
+          try {
+            localStorage.setItem(storageKey, "1");
+          } catch (error) {}
+        }
+        refreshBroadcastLabel();
+      };
+      if (storageKey) {
+        let hasRead = false;
+        try {
+          hasRead = localStorage.getItem(storageKey) === "1";
+        } catch (error) {}
+        if (!hasRead) {
+          broadcastButton.classList.add("is-unread");
+        }
+      }
+      refreshBroadcastLabel();
+      broadcastButton.addEventListener("click", markBroadcastRead);
+    }
 
     const chartBox = document.getElementById("trend-chart");
     const chartSvg = chartBox.querySelector("svg");
