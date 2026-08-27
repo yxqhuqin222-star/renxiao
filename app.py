@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import socket
+import subprocess
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from urllib.parse import urlencode
 
 from flask import Flask, abort, redirect, render_template, request, send_file, send_from_directory, url_for
@@ -23,6 +26,9 @@ from pipeline import (
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 
+PROJECT_DIR = Path(__file__).resolve().parent
+PUBLIC_PAGES_URL = "https://yxqhuqin222-star.github.io/renxiao/"
+
 FAVICON_FILES = {
     "android-chrome-192x192.png",
     "android-chrome-512x512.png",
@@ -32,6 +38,55 @@ FAVICON_FILES = {
     "favicon.ico",
     "site.webmanifest",
 }
+
+
+def _short_command_output(result: subprocess.CompletedProcess[str]) -> str:
+    output = "\n".join(part for part in (result.stdout, result.stderr) if part)
+    output = " ".join(output.split())
+    return output[:240] + ("…" if len(output) > 240 else "")
+
+
+def _run_publish_step(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        args,
+        cwd=PROJECT_DIR,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
+    )
+
+
+def _publish_readonly_snapshot() -> tuple[bool, str]:
+    export = _run_publish_step([sys.executable, "scripts/export_readonly.py"])
+    if export.returncode != 0:
+        return False, "本地数据已更新，但公开页导出失败：" + _short_command_output(export)
+
+    diff = _run_publish_step(["git", "diff", "--quiet", "HEAD", "--", "docs/index.html"])
+    if diff.returncode == 0:
+        return True, f"公开页数据没有变化，无需发布；地址：{PUBLIC_PAGES_URL}"
+    if diff.returncode != 1:
+        return False, "本地数据已更新，但检查公开页变更失败：" + _short_command_output(diff)
+
+    add = _run_publish_step(["git", "add", "docs/index.html"])
+    if add.returncode != 0:
+        return False, "本地数据已更新，但暂存公开页失败：" + _short_command_output(add)
+
+    staged = _run_publish_step(["git", "diff", "--cached", "--quiet", "--", "docs/index.html"])
+    if staged.returncode == 0:
+        return True, f"公开页数据没有变化，无需发布；地址：{PUBLIC_PAGES_URL}"
+    if staged.returncode != 1:
+        return False, "本地数据已更新，但检查待发布文件失败：" + _short_command_output(staged)
+
+    commit = _run_publish_step(["git", "commit", "-m", "chore: update dashboard data"])
+    if commit.returncode != 0:
+        return False, "本地数据已更新，但提交公开页失败：" + _short_command_output(commit)
+
+    push = _run_publish_step(["git", "push", "origin", "main"], timeout=180)
+    if push.returncode != 0:
+        return False, "本地数据已更新并已提交，但推送公开页失败：" + _short_command_output(push)
+
+    return True, f"已同步公开页，GitHub Pages 稍后刷新：{PUBLIC_PAGES_URL}"
 
 
 def _filters_from_request(prefix: str, include_xuebu: bool = False, default_view: str = "7d") -> dict[str, object]:
@@ -397,7 +452,12 @@ def upload():
         return redirect(url_for("index", status="表头缺失：" + "、".join(sorted(set(missing)))))
     rows, skipped = compute_result(tongshi_rows, zhuanhua_rows, mubiao_rows)
     upsert_rows(rows)
-    return redirect(url_for("index", status=f"已更新 {len(rows)} 行，跳过 {len(skipped)} 行"))
+    publish_ok, publish_status = _publish_readonly_snapshot()
+    status_prefix = f"已更新 {len(rows)} 行，跳过 {len(skipped)} 行"
+    status = f"{status_prefix}；{publish_status}"
+    if not publish_ok:
+        status = f"{status_prefix}；⚠️ {publish_status}"
+    return redirect(url_for("index", status=status))
 
 
 @app.route("/download")

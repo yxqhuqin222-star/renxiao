@@ -1,7 +1,8 @@
 import unittest
+import subprocess
 from unittest.mock import patch
 
-from app import _daily_broadcast, _table_aggregate, _table_daily_aggregates
+from app import _daily_broadcast, _publish_readonly_snapshot, _table_aggregate, _table_daily_aggregates
 
 
 class TestAppAggregates(unittest.TestCase):
@@ -174,6 +175,47 @@ class TestAppAggregates(unittest.TestCase):
         self.assertEqual("99.6", pool["line_cost"])
         self.assertEqual("-48.1", pool["line_vs_yesterday"])
         self.assertEqual("-", pool["line_vs_last_week"])
+
+
+class TestReadonlyPublish(unittest.TestCase):
+    def test_publish_skips_commit_when_snapshot_has_no_change(self):
+        calls = []
+
+        def fake_run(args, timeout=120):
+            calls.append(args)
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        with patch("app._run_publish_step", side_effect=fake_run):
+            ok, message = _publish_readonly_snapshot()
+
+        self.assertTrue(ok)
+        self.assertIn("无需发布", message)
+        self.assertEqual(
+            [
+                ["git", "diff", "--quiet", "HEAD", "--", "docs/index.html"],
+            ],
+            calls[1:],
+        )
+
+    def test_publish_commits_and_pushes_only_readonly_snapshot(self):
+        calls = []
+
+        def fake_run(args, timeout=120):
+            calls.append(args)
+            if args == ["git", "diff", "--quiet", "HEAD", "--", "docs/index.html"]:
+                return subprocess.CompletedProcess(args, 1, "", "")
+            if args == ["git", "diff", "--cached", "--quiet", "--", "docs/index.html"]:
+                return subprocess.CompletedProcess(args, 1, "", "")
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        with patch("app._run_publish_step", side_effect=fake_run):
+            ok, message = _publish_readonly_snapshot()
+
+        self.assertTrue(ok)
+        self.assertIn("已同步公开页", message)
+        self.assertEqual(["git", "add", "docs/index.html"], calls[2])
+        self.assertEqual(["git", "commit", "-m", "chore: update dashboard data"], calls[4])
+        self.assertEqual(["git", "push", "origin", "main"], calls[5])
 
 
 if __name__ == "__main__":
