@@ -441,6 +441,39 @@
     .broadcast-table td {
       padding: 9px 10px;
     }
+    .broadcast-table thead th {
+      background: var(--surface-soft);
+      white-space: nowrap;
+    }
+    .broadcast-table .metric-group {
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: 0.01em;
+      text-align: center;
+    }
+    .broadcast-table .metric-group--line {
+      background: #f8fafc;
+      color: #334155;
+    }
+    .broadcast-table .metric-group--case {
+      background: #fff7ed;
+      color: #9a3412;
+    }
+    .broadcast-table .metric-subhead {
+      font-size: 12px;
+      color: var(--ink-muted);
+      font-weight: 680;
+    }
+    .broadcast-table .metric-cell--line {
+      background: rgba(248, 250, 252, 0.58);
+    }
+    .broadcast-table .metric-cell--case {
+      background: rgba(255, 247, 237, 0.54);
+    }
+    .broadcast-table .metric-split {
+      border-left: 1px solid var(--line);
+    }
     .delta-up { color: var(--danger); }
     .delta-down { color: var(--success); }
     @media (prefers-reduced-motion: reduce) {
@@ -804,25 +837,29 @@
                 <table class="broadcast-table">
                   <thead>
                     <tr>
-                      <th>流转模式</th>
-                      <th>线路成本</th>
-                      <th>较昨日</th>
-                      <th>较上周同日</th>
-                      <th>单例子结算成本</th>
-                      <th>较昨日</th>
-                      <th>较上周同日</th>
+                      <th rowspan="2">流转模式</th>
+                      <th class="metric-group metric-group--line" colspan="3">线路成本考察</th>
+                      <th class="metric-group metric-group--case metric-split" colspan="3">单例子结算成本考察</th>
+                    </tr>
+                    <tr>
+                      <th class="metric-subhead">当前</th>
+                      <th class="metric-subhead">较昨日</th>
+                      <th class="metric-subhead">较上周同日</th>
+                      <th class="metric-subhead metric-split">当前</th>
+                      <th class="metric-subhead">较昨日</th>
+                      <th class="metric-subhead">较上周同日</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for row in group.rows %}
                       <tr>
                         <td><span class="pill mode">{{ row.mode }}</span></td>
-                        <td class="num">{{ row.line_cost }}</td>
-                        <td class="num {{ 'delta-down' if row.line_vs_yesterday.startswith('-') else 'delta-up' if row.line_vs_yesterday.startswith('+') else '' }}">{{ row.line_vs_yesterday }}</td>
-                        <td class="num {{ 'delta-down' if row.line_vs_last_week.startswith('-') else 'delta-up' if row.line_vs_last_week.startswith('+') else '' }}">{{ row.line_vs_last_week }}</td>
-                        <td class="num">{{ row.case_cost }}</td>
-                        <td class="num {{ 'delta-down' if row.case_vs_yesterday.startswith('-') else 'delta-up' if row.case_vs_yesterday.startswith('+') else '' }}">{{ row.case_vs_yesterday }}</td>
-                        <td class="num {{ 'delta-down' if row.case_vs_last_week.startswith('-') else 'delta-up' if row.case_vs_last_week.startswith('+') else '' }}">{{ row.case_vs_last_week }}</td>
+                        <td class="num metric-cell--line">{{ row.line_cost }}</td>
+                        <td class="num metric-cell--line {{ 'delta-down' if row.line_vs_yesterday.startswith('-') else 'delta-up' if row.line_vs_yesterday.startswith('+') else '' }}">{{ row.line_vs_yesterday }}</td>
+                        <td class="num metric-cell--line {{ 'delta-down' if row.line_vs_last_week.startswith('-') else 'delta-up' if row.line_vs_last_week.startswith('+') else '' }}">{{ row.line_vs_last_week }}</td>
+                        <td class="num metric-cell--case metric-split">{{ row.case_cost }}</td>
+                        <td class="num metric-cell--case {{ 'delta-down' if row.case_vs_yesterday.startswith('-') else 'delta-up' if row.case_vs_yesterday.startswith('+') else '' }}">{{ row.case_vs_yesterday }}</td>
+                        <td class="num metric-cell--case {{ 'delta-down' if row.case_vs_last_week.startswith('-') else 'delta-up' if row.case_vs_last_week.startswith('+') else '' }}">{{ row.case_vs_last_week }}</td>
                       </tr>
                     {% endfor %}
                   </tbody>
