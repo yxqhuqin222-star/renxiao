@@ -557,6 +557,12 @@
     .result-count b { color: var(--ink); font-size: 16px; }
     .aggregate-panel { margin-bottom: 16px; }
     .aggregate-panel[hidden] { display: none; }
+    .aggregate-title {
+      margin: 0 0 10px;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 760;
+    }
     .aggregate-table-wrap {
       width: 100%;
       overflow: auto;
@@ -567,36 +573,6 @@
     .aggregate-table {
       min-width: 780px;
       background: var(--surface-soft);
-    }
-    .result-summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-md);
-      background: var(--surface-soft);
-    }
-    .summary-item {
-      min-width: 0;
-      padding-right: 12px;
-      border-right: 1px solid var(--line);
-    }
-    .summary-item:last-child { border-right: 0; padding-right: 0; }
-    .summary-label {
-      display: block;
-      margin-bottom: 4px;
-      color: var(--ink-muted);
-      font-size: 12px;
-      font-weight: 680;
-    }
-    .summary-value {
-      display: block;
-      color: var(--ink);
-      font-size: 20px;
-      font-weight: 760;
-      line-height: 1.2;
-      font-variant-numeric: tabular-nums;
     }
     .table-wrap {
       width: 100%;
@@ -651,7 +627,61 @@
       color: var(--ink-muted);
     }
 
+    /* === KPI 概览带（P0: 顶部核心指标） === */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .kpi {
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 15px 18px 15px 22px;
+    }
+    .kpi::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--primary);
+    }
+    .kpi-label {
+      display: block;
+      color: var(--ink-muted);
+      font-size: 12.5px;
+      font-weight: 680;
+    }
+    .kpi-value {
+      display: block;
+      margin-top: 6px;
+      color: var(--ink);
+      font-size: 26px;
+      font-weight: 760;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+    /* === 曲线均值参考线（P0: 目标/均值参考） === */
+    .trend-mean {
+      fill: none;
+      stroke: var(--warning);
+      stroke-width: 1.5;
+      stroke-dasharray: 5 4;
+    }
+    .trend-mean-label {
+      fill: var(--warning);
+      font-size: 11px;
+      font-weight: 680;
+      font-variant-numeric: tabular-nums;
+    }
+
     @media (max-width: 860px) {
+      .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .page { padding: 24px 14px 48px; }
       .topbar, .table-head, .section-head { align-items: stretch; flex-direction: column; }
       .chart-head { align-items: stretch; flex-direction: column; }
@@ -663,14 +693,6 @@
       .broadcast-notice { text-align: left; }
       .controls { align-items: stretch; }
       .table-actions { justify-content: stretch; }
-      .result-summary { grid-template-columns: 1fr; }
-      .summary-item {
-        padding-right: 0;
-        padding-bottom: 12px;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
-      .summary-item:last-child { padding-bottom: 0; border-bottom: 0; }
       .field, .btn, .custom-range, .segmented { width: 100%; }
       .date-range-field { min-width: 0; }
       .segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -708,6 +730,14 @@
         <div class="latest-badge">最新：{{ latest_date or "暂无数据" }}</div>
       </div>
     </header>
+
+    <section class="kpi-strip" aria-label="核心指标概览（最新一天）">
+      <div class="kpi"><span class="kpi-label">人效</span><span class="kpi-value" data-kpi="efficiency">{{ table_aggregate.efficiency }}</span></div>
+      <div class="kpi"><span class="kpi-label">单量</span><span class="kpi-value" data-kpi="total_examples">{{ table_aggregate.total_examples }}</span></div>
+      <div class="kpi"><span class="kpi-label">线路成本</span><span class="kpi-value" data-kpi="line_cost">{{ table_aggregate.line_cost }}</span></div>
+      <div class="kpi"><span class="kpi-label">单例子结算成本</span><span class="kpi-value" data-kpi="case_cost">{{ table_aggregate.case_cost }}</span></div>
+      <div class="kpi"><span class="kpi-label">接通转化率</span><span class="kpi-value" data-kpi="rate">{{ table_aggregate.rate }}</span></div>
+    </section>
 
     {% if status %}
       <div class="status" role="status">{{ status }}</div>
@@ -785,7 +815,7 @@
             <b id="trend-latest">-</b>
           </div>
         </div>
-        <form class="controls chart-controls js-range-form" action="{{ url_for('index') }}" method="get">
+<form class="controls chart-controls js-range-form" action="{{ url_for('index') }}" method="get">
           {% for item in chart_preserve_args %}
             <input type="hidden" name="{{ item.name }}" value="{{ item.value }}">
           {% endfor %}
@@ -944,43 +974,14 @@
             <div class="result-count">共 <b>{{ rows|length }}</b> 行 <span>{{ view_label }}</span></div>
           </div>
           <div class="table-actions">
-            <button class="btn btn-secondary js-panel-toggle" type="button" aria-expanded="false" aria-controls="aggregate-panel">聚合数据</button>
-            <button class="btn btn-secondary js-panel-toggle" type="button" aria-expanded="false" aria-controls="day-aggregate-panel">day聚合</button>
             <a class="btn btn-secondary" href="{{ download_url }}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
               下载 result.xlsx
             </a>
           </div>
         </div>
-        <div class="aggregate-panel" id="aggregate-panel" hidden>
-          <div class="result-summary" aria-label="当前筛选聚合数据">
-            <div class="summary-item">
-              <span class="summary-label">人效</span>
-              <span class="summary-value">{{ table_aggregate.efficiency }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">人效目标</span>
-              <span class="summary-value">{{ table_aggregate.target }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">单量</span>
-              <span class="summary-value">{{ table_aggregate.total_examples }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">线路成本</span>
-              <span class="summary-value">{{ table_aggregate.line_cost }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">单例子结算成本</span>
-              <span class="summary-value">{{ table_aggregate.case_cost }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">接通转化率</span>
-              <span class="summary-value">{{ table_aggregate.rate }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="aggregate-panel" id="day-aggregate-panel" hidden>
+        <div class="aggregate-panel" id="day-aggregate-panel">
+          <h3 class="aggregate-title">day聚合</h3>
           <div class="aggregate-table-wrap" aria-label="当前筛选 day 聚合数据">
             {% if table_daily_aggregates %}
               <table class="aggregate-table">
@@ -1248,6 +1249,12 @@
       const linePath = pathPoints.map(([px, py], index) => `${index === 0 ? "M" : "L"} ${px.toFixed(2)} ${py.toFixed(2)}`).join(" ");
       const areaPath = `${linePath} L ${pathPoints[pathPoints.length - 1][0].toFixed(2)} ${height - margin.bottom} L ${pathPoints[0][0].toFixed(2)} ${height - margin.bottom} Z`;
       chartSvg.appendChild(make("path", { class: "trend-area", d: areaPath }));
+
+      const meanValue = values.reduce((s, v) => s + v, 0) / (values.length || 1);
+      const meanY = y(meanValue);
+      chartSvg.appendChild(make("line", { class: "trend-mean", x1: margin.left, x2: width - margin.right, y1: meanY, y2: meanY }));
+      chartSvg.appendChild(make("text", { class: "trend-mean-label", x: width - margin.right, y: meanY - 6, "text-anchor": "end" })).textContent = "均值 " + meanValue.toFixed(1);
+
       chartSvg.appendChild(make("path", { class: "trend-line", d: linePath }));
 
       pathPoints.forEach(([px, py], index) => {
