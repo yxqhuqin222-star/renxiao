@@ -557,12 +557,6 @@
     .result-count b { color: var(--ink); font-size: 16px; }
     .aggregate-panel { margin-bottom: 16px; }
     .aggregate-panel[hidden] { display: none; }
-    .aggregate-title {
-      margin: 0 0 10px;
-      color: var(--ink);
-      font-size: 15px;
-      font-weight: 760;
-    }
     .aggregate-table-wrap {
       width: 100%;
       overflow: auto;
@@ -573,6 +567,36 @@
     .aggregate-table {
       min-width: 780px;
       background: var(--surface-soft);
+    }
+    .result-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+    }
+    .summary-item {
+      min-width: 0;
+      padding-right: 12px;
+      border-right: 1px solid var(--line);
+    }
+    .summary-item:last-child { border-right: 0; padding-right: 0; }
+    .summary-label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink-muted);
+      font-size: 12px;
+      font-weight: 680;
+    }
+    .summary-value {
+      display: block;
+      color: var(--ink);
+      font-size: 20px;
+      font-weight: 760;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
     }
     .table-wrap {
       width: 100%;
@@ -693,6 +717,14 @@
       .broadcast-notice { text-align: left; }
       .controls { align-items: stretch; }
       .table-actions { justify-content: stretch; }
+      .result-summary { grid-template-columns: 1fr; }
+      .summary-item {
+        padding-right: 0;
+        padding-bottom: 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .summary-item:last-child { padding-bottom: 0; border-bottom: 0; }
       .field, .btn, .custom-range, .segmented { width: 100%; }
       .date-range-field { min-width: 0; }
       .segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -974,14 +1006,42 @@
             <div class="result-count">共 <b>{{ rows|length }}</b> 行 <span>{{ view_label }}</span></div>
           </div>
           <div class="table-actions">
+            <button class="btn btn-secondary js-panel-toggle" type="button" aria-expanded="false" aria-controls="day-aggregate-panel">day聚合</button>
             <a class="btn btn-secondary" href="{{ download_url }}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
               下载 result.xlsx
             </a>
           </div>
         </div>
-        <div class="aggregate-panel" id="day-aggregate-panel">
-          <h3 class="aggregate-title">day聚合</h3>
+        <div class="aggregate-panel">
+          <div class="result-summary" aria-label="当前筛选聚合数据">
+            <div class="summary-item">
+              <span class="summary-label">人效</span>
+              <span class="summary-value">{{ table_aggregate.efficiency }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">人效目标</span>
+              <span class="summary-value">{{ table_aggregate.target }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">单量</span>
+              <span class="summary-value">{{ table_aggregate.total_examples }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">线路成本</span>
+              <span class="summary-value">{{ table_aggregate.line_cost }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">单例子结算成本</span>
+              <span class="summary-value">{{ table_aggregate.case_cost }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">接通转化率</span>
+              <span class="summary-value">{{ table_aggregate.rate }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="aggregate-panel" id="day-aggregate-panel" hidden>
           <div class="aggregate-table-wrap" aria-label="当前筛选 day 聚合数据">
             {% if table_daily_aggregates %}
               <table class="aggregate-table">

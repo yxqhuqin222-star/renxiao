@@ -190,6 +190,17 @@ CLIENT_JS = r"""
         '<th>线路成本</th><th>单例子结算成本</th><th>接通转化率</th>' +
         '</tr></thead><tbody>' + body + '</tbody></table>';
     }
+    var agg = aggregate(rows);
+    var summary = document.querySelector('#results .result-summary');
+    if (summary) {
+      summary.innerHTML =
+        '<div class="summary-item"><span class="summary-label">人效</span><span class="summary-value">' + agg.efficiency + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">人效目标</span><span class="summary-value">' + agg.target + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">单量</span><span class="summary-value">' + agg.total_examples + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">线路成本</span><span class="summary-value">' + agg.line_cost + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">单例子结算成本</span><span class="summary-value">' + agg.case_cost + '</span></div>' +
+        '<div class="summary-item"><span class="summary-label">接通转化率</span><span class="summary-value">' + agg.rate + '</span></div>';
+    }
     var daily = aggregateByDate(rows);
     var dailyWrap = document.querySelector('#results .aggregate-table-wrap');
     if (dailyWrap) {
