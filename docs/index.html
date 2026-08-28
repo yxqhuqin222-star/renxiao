@@ -382,13 +382,6 @@
       font-size: 12.5px;
       font-variant-numeric: tabular-nums;
     }
-    .broadcast-notice {
-      margin: 0;
-      max-width: 520px;
-      color: var(--warning);
-      font-size: 12.5px;
-      text-align: right;
-    }
     .broadcast-summary {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -748,7 +741,6 @@
       .broadcast-button { width: 100%; }
       .broadcast-button-text { display: inline; }
       .broadcast-head { flex-direction: column; }
-      .broadcast-notice { text-align: left; }
       .controls { align-items: stretch; }
       .table-actions { justify-content: stretch; }
       .result-summary { grid-template-columns: 1fr; }
@@ -815,7 +807,6 @@
             上周同日：2026-08-19
           </div>
         </div>
-        <p class="broadcast-notice">今日只有 9 行，可能并未覆盖全部学部/流转模式；空值按无数据处理，不按 0 计算。</p>
       </div>
       <div class="broadcast-summary" aria-label="今日核心指标">
         <div class="broadcast-stat"><span>数据行数</span><b>9</b></div>
@@ -1321,7 +1312,7 @@
           <button class="btn btn-primary" type="submit">查询</button>
           <a class="btn btn-secondary" href="#" data-reset="chart">重置</a>
         </form>
-        <div class="chart-wrap" id="trend-chart" data-points='[{"\u603b\u5355\u91cf": 1704.0, "\u65e5\u671f": "2026-08-21", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 90.3289}, {"\u603b\u5355\u91cf": 1375.0, "\u65e5\u671f": "2026-08-22", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 91.7966}, {"\u603b\u5355\u91cf": 1226.0, "\u65e5\u671f": "2026-08-23", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 110.6975}, {"\u603b\u5355\u91cf": 302.0, "\u65e5\u671f": "2026-08-24", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 81.0204}, {"\u603b\u5355\u91cf": 1250.0, "\u65e5\u671f": "2026-08-25", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 96.2431}, {"\u603b\u5355\u91cf": 1460.0, "\u65e5\u671f": "2026-08-26", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 89.3762}]'>
+        <div class="chart-wrap" id="trend-chart" data-points='[{"\u603b\u5355\u91cf": 1375.0, "\u65e5\u671f": "2026-08-22", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 91.7966}, {"\u603b\u5355\u91cf": 1226.0, "\u65e5\u671f": "2026-08-23", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 110.6975}, {"\u603b\u5355\u91cf": 302.0, "\u65e5\u671f": "2026-08-24", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 81.0204}, {"\u603b\u5355\u91cf": 1250.0, "\u65e5\u671f": "2026-08-25", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 96.2431}, {"\u603b\u5355\u91cf": 1460.0, "\u65e5\u671f": "2026-08-26", "\u805a\u5408\u5355\u4f8b\u5b50\u7ed3\u7b97\u6210\u672c": 89.3762}]'>
           <svg class="chart-svg" role="img" aria-labelledby="trend-title" aria-describedby="trend-desc"></svg>
           <div class="chart-empty" hidden>
             <div>
