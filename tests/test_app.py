@@ -2,7 +2,14 @@ import unittest
 import subprocess
 from unittest.mock import patch
 
-from app import _daily_broadcast, _publish_readonly_snapshot, _table_aggregate, _table_daily_aggregates
+from app import (
+    _daily_broadcast,
+    _github_publish_blocker,
+    _publish_env,
+    _publish_readonly_snapshot,
+    _table_aggregate,
+    _table_daily_aggregates,
+)
 
 
 class TestAppAggregates(unittest.TestCase):
@@ -178,6 +185,30 @@ class TestAppAggregates(unittest.TestCase):
 
 
 class TestReadonlyPublish(unittest.TestCase):
+    def test_publish_env_uses_system_proxy_when_launch_agent_has_no_shell_proxy(self):
+        with patch.dict("os.environ", {}, clear=True), patch(
+            "app._system_https_proxy_url", return_value="http://127.0.0.1:21081"
+        ), patch("app._proxy_is_reachable", return_value=True):
+            env = _publish_env()
+
+        self.assertEqual("http://127.0.0.1:21081", env["HTTPS_PROXY"])
+        self.assertEqual("http://127.0.0.1:21081", env["HTTP_PROXY"])
+        self.assertEqual("http://127.0.0.1:21081", env["ALL_PROXY"])
+
+    def test_publish_env_preserves_existing_shell_proxy(self):
+        with patch.dict("os.environ", {"HTTPS_PROXY": "http://127.0.0.1:9999"}, clear=True), patch(
+            "app._system_https_proxy_url", return_value="http://127.0.0.1:21081"
+        ), patch("app._proxy_is_reachable", return_value=True):
+            env = _publish_env()
+
+        self.assertEqual("http://127.0.0.1:9999", env["HTTPS_PROXY"])
+
+    def test_github_publish_blocker_reports_missing_proxy_before_slow_push(self):
+        with patch("app._publish_env", return_value={}), patch("app.socket.create_connection", side_effect=OSError):
+            message = _github_publish_blocker()
+
+        self.assertIn("没有检测到可用 GitHub 代理", message)
+
     def test_publish_skips_commit_when_snapshot_has_no_change(self):
         calls = []
 

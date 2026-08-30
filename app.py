@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import os
 import socket
 import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import urlparse, urlencode
 
 from flask import Flask, abort, redirect, render_template, request, send_file, send_from_directory, url_for
 
@@ -28,6 +29,7 @@ app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 
 PROJECT_DIR = Path(__file__).resolve().parent
 PUBLIC_PAGES_URL = "https://yxqhuqin222-star.github.io/renxiao/"
+DEFAULT_GITHUB_PROXY = "http://127.0.0.1:21081"
 
 FAVICON_FILES = {
     "android-chrome-192x192.png",
@@ -40,6 +42,86 @@ FAVICON_FILES = {
 }
 
 
+def _proxy_is_reachable(proxy_url: str) -> bool:
+    try:
+        parsed = urlparse(proxy_url)
+        host = parsed.hostname
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        if not host:
+            return False
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except (OSError, ValueError):
+        return False
+
+
+def _system_https_proxy_url() -> str | None:
+    try:
+        proxy_config = subprocess.run(
+            ["scutil", "--proxy"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proxy_config.returncode != 0:
+        return None
+
+    values: dict[str, str] = {}
+    for line in proxy_config.stdout.splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        values[key.strip()] = value.strip()
+
+    if values.get("HTTPSEnable") != "1":
+        return None
+    host = values.get("HTTPSProxy")
+    port_text = values.get("HTTPSPort")
+    if not host or not port_text:
+        return None
+    proxy_url = f"http://{host}:{port_text}"
+    if not _proxy_is_reachable(proxy_url):
+        return None
+    return proxy_url
+
+
+def _publish_env() -> dict[str, str]:
+    env = os.environ.copy()
+    candidate_proxy_urls = [
+        env.get("HTTPS_PROXY"),
+        env.get("https_proxy"),
+        env.get("HTTP_PROXY"),
+        env.get("http_proxy"),
+        env.get("RENXIAO_GITHUB_PROXY"),
+        _system_https_proxy_url(),
+        DEFAULT_GITHUB_PROXY,
+    ]
+    for proxy_url in candidate_proxy_urls:
+        if proxy_url and _proxy_is_reachable(proxy_url):
+            env["HTTPS_PROXY"] = proxy_url
+            env.setdefault("HTTP_PROXY", proxy_url)
+            env.setdefault("ALL_PROXY", proxy_url)
+            break
+    return env
+
+
+def _github_publish_blocker() -> str | None:
+    env = _publish_env()
+    if env.get("HTTPS_PROXY") or env.get("https_proxy"):
+        return None
+    try:
+        with socket.create_connection(("github.com", 443), timeout=5):
+            return None
+    except OSError:
+        return (
+            "没有检测到可用 GitHub 代理，且当前网络无法直连 github.com:443。"
+            "请先打开 xiaomao/代理（本机默认端口 127.0.0.1:21081），再重新上传或发布。"
+        )
+
+
 def _short_command_output(result: subprocess.CompletedProcess[str]) -> str:
     output = "\n".join(part for part in (result.stdout, result.stderr) if part)
     output = " ".join(output.split())
@@ -50,6 +132,7 @@ def _run_publish_step(args: list[str], timeout: int = 120) -> subprocess.Complet
     return subprocess.run(
         args,
         cwd=PROJECT_DIR,
+        env=_publish_env(),
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -81,6 +164,10 @@ def _publish_readonly_snapshot() -> tuple[bool, str]:
     commit = _run_publish_step(["git", "commit", "-m", "chore: update dashboard data"])
     if commit.returncode != 0:
         return False, "本地数据已更新，但提交公开页失败：" + _short_command_output(commit)
+
+    blocker = _github_publish_blocker()
+    if blocker:
+        return False, "本地数据已更新并已提交，但推送公开页失败：" + blocker
 
     push = _run_publish_step(["git", "push", "origin", "main"], timeout=180)
     if push.returncode != 0:
