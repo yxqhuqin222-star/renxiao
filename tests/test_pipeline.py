@@ -62,6 +62,29 @@ class TestPipeline(unittest.TestCase):
         self.assertAlmostEqual(by_key[("爆量未加微", "高中")][6], 28.85)
         self.assertAlmostEqual(by_key[("爆量本地化", "初中")][6], 50.85)
 
+    def test_compute_result_uses_latest_effective_labor_cost_rule(self):
+        original_db = S.DB_PATH
+        with tempfile.TemporaryDirectory() as tmp:
+            S.DB_PATH = Path(tmp) / "rules.db"
+            pipeline.init_db()
+            pipeline.save_labor_cost_rule("爆量再植课", 30.0, "2026-08-01")
+            pipeline.save_labor_cost_rule("爆量再植课", 45.0, "2026-08-10")
+            tongshi_rows = [
+                {"日期": "2026-08-01", "模式": "爆量再植课", "学部": "小学", "AI接通数": 100, "例子数": 10, "话单分钟数": 50},
+                {"日期": "2026-08-11", "模式": "爆量再植课", "学部": "小学", "AI接通数": 100, "例子数": 10, "话单分钟数": 50},
+            ]
+            zhuanhua_rows = [
+                {"日期": "2026-08-01", "流转模式": "爆量再植课", "单量": 80, "出勤": 10},
+                {"日期": "2026-08-11", "流转模式": "爆量再植课", "单量": 80, "出勤": 10},
+            ]
+            rows, skipped = pipeline.compute_result(tongshi_rows, zhuanhua_rows)
+
+        S.DB_PATH = original_db
+        self.assertEqual([], skipped)
+        by_day = {row[0]: row for row in rows}
+        self.assertAlmostEqual(30.425, by_day["2026-08-01"][6])
+        self.assertAlmostEqual(45.425, by_day["2026-08-11"][6])
+
     def test_fetch_filtered_latest_and_custom_range(self):
         original_db = S.DB_PATH
         with tempfile.TemporaryDirectory() as tmp:

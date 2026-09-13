@@ -114,9 +114,58 @@ def aggregate_mubiao(mubiao_rows: list[dict[str, Any]] | None) -> dict[tuple[str
     return targets
 
 
-def labor_cost(mode: str, efficiency: float) -> float | None:
+def load_labor_cost_rules() -> list[dict[str, Any]]:
+    """Return configured labor-cost rules, newest effective date first."""
+    init_db()
+    conn = sqlite3.connect(S.DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = [dict(row) for row in conn.execute(
+        "SELECT id, 流转模式, 人力成本, 生效日期 FROM labor_cost_rule ORDER BY 生效日期 DESC, 流转模式"
+    ).fetchall()]
+    conn.close()
+    return rows
+
+
+def save_labor_cost_rule(mode: str, cost: float, effective_date: str, rule_id: int | None = None) -> None:
+    init_db()
+    conn = sqlite3.connect(S.DB_PATH)
+    try:
+        if rule_id is None:
+            conn.execute(
+                "INSERT INTO labor_cost_rule(流转模式, 人力成本, 生效日期) VALUES(?,?,?)",
+                (mode, cost, effective_date),
+            )
+        else:
+            conn.execute(
+                "UPDATE labor_cost_rule SET 流转模式=?, 人力成本=?, 生效日期=? WHERE id=?",
+                (mode, cost, effective_date, rule_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_labor_cost_rule(rule_id: int) -> None:
+    init_db()
+    conn = sqlite3.connect(S.DB_PATH)
+    try:
+        conn.execute("DELETE FROM labor_cost_rule WHERE id=?", (rule_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def labor_cost(mode: str, efficiency: float, day: str | None = None, rules: list[dict[str, Any]] | None = None) -> float | None:
     if mode in S.LINE_ONLY_COST_MODES:
         return 0.0
+    if rules is None:
+        rules = load_labor_cost_rules()
+    matching = [
+        row for row in rules
+        if row["流转模式"] == mode and (not day or row["生效日期"] <= day)
+    ]
+    if matching:
+        return float(max(matching, key=lambda row: row["生效日期"])["人力成本"])
     if mode in S.LABOR_COST_RULES:
         return S.LABOR_COST_RULES[mode]
     if mode == "大神" and efficiency:
@@ -131,6 +180,7 @@ def compute_result(
 ) -> tuple[list[tuple[Any, ...]], list[tuple[str, str, str]]]:
     agg = aggregate_tongshi(tongshi_rows)
     targets = aggregate_mubiao(mubiao_rows)
+    cost_rules = load_labor_cost_rules()
     by_mode: dict[tuple[str, str], dict[str, dict[str, float | None]]] = {}
     for (day, mode, xuebu), values in agg.items():
         by_mode.setdefault((day, mode), {})[xuebu] = values
@@ -156,7 +206,7 @@ def compute_result(
         if efficiency == 0.0:
             skipped.append((day, mode, "单量为空或为 0"))
             continue
-        human_cost = labor_cost(mode, efficiency)
+        human_cost = labor_cost(mode, efficiency, day, cost_rules)
         if human_cost is None:
             skipped.append((day, mode, "未知流转模式，无成本规则"))
             continue
@@ -211,6 +261,19 @@ def init_db() -> None:
             AI接通数 REAL,
             PRIMARY KEY(日期, 流转模式, 学部))"""
     )
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS labor_cost_rule(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            流转模式 TEXT NOT NULL,
+            人力成本 REAL NOT NULL,
+            生效日期 TEXT NOT NULL,
+            UNIQUE(流转模式, 生效日期))"""
+    )
+    if conn.execute("SELECT COUNT(*) FROM labor_cost_rule").fetchone()[0] == 0:
+        conn.executemany(
+            "INSERT INTO labor_cost_rule(流转模式, 人力成本, 生效日期) VALUES(?,?,?)",
+            [(mode, cost, "1900-01-01") for mode, cost in S.LABOR_COST_RULES.items()],
+        )
     columns = [row[1] for row in conn.execute("PRAGMA table_info(result)").fetchall()]
     for column in ("人效目标", "单量", "出勤", "人效单量", "AI接通数"):
         if column not in columns:

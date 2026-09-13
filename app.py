@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import sqlite3
+import shutil
 import socket
 import subprocess
 import sys
@@ -19,7 +21,10 @@ from pipeline import (
     fetch_filtered,
     generate_result_xlsx,
     latest_date,
+    delete_labor_cost_rule,
+    load_labor_cost_rules,
     load_sheet,
+    save_labor_cost_rule,
     upsert_rows,
     validate_headers,
 )
@@ -517,6 +522,38 @@ def index():
         table_reset_url=_url_with_filters(chart_filters, _default_filters(include_xuebu=True, view="latest")),
         status=status,
     )
+
+
+@app.route("/admin", methods=["GET"])
+def admin():
+    return render_template("admin.html", rules=load_labor_cost_rules(), modes=distinct_modes(), status=request.args.get("status"))
+
+
+@app.route("/admin/rules", methods=["POST"])
+def save_admin_rule():
+    mode = (request.form.get("mode") or "").strip()
+    effective_date = (request.form.get("effective_date") or "").strip()
+    cost_text = (request.form.get("labor_cost") or "").strip()
+    rule_id_text = (request.form.get("rule_id") or "").strip()
+    try:
+        cost = float(cost_text)
+        rule_id = int(rule_id_text) if rule_id_text else None
+        datetime.strptime(effective_date, "%Y-%m-%d")
+        if not mode or cost < 0:
+            raise ValueError
+        save_labor_cost_rule(mode, cost, effective_date, rule_id)
+    except (TypeError, ValueError, sqlite3.IntegrityError):
+        return redirect(url_for("admin", status="保存失败：请填写流转模式、有效日期和不小于 0 的人力成本。"))
+    return redirect(url_for("admin", status="已保存规则；重新上传并更新后，新规则才会写入结果数据。"))
+
+
+@app.route("/admin/rules/delete", methods=["POST"])
+def delete_admin_rule():
+    try:
+        delete_labor_cost_rule(int(request.form.get("rule_id", "")))
+    except (TypeError, ValueError):
+        return redirect(url_for("admin", status="删除失败：规则编号无效。"))
+    return redirect(url_for("admin", status="规则已删除。"))
 
 
 @app.route("/upload", methods=["POST"])

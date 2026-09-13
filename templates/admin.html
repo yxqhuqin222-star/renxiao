@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>人力成本管理｜人效、成本监控</title>
+  <style>
+    :root { --bg:#f5f7fb; --surface:#fff; --ink:#17202e; --muted:#596579; --line:#e5e9f0; --primary:#315cf6; --danger:#b42318; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial,sans-serif; }
+    .page { max-width:1000px; margin:0 auto; padding:36px 24px 64px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:24px; }
+    h1,h2 { margin:0; } h1 { font-size:28px; } h2 { font-size:18px; }
+    .muted { color:var(--muted); margin:8px 0 0; }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px; margin-top:18px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
+    .form-grid { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:14px; align-items:end; margin-top:20px; }
+    label { display:grid; gap:6px; color:var(--muted); font-size:13px; }
+    input { width:100%; border:1px solid #d7dde8; border-radius:9px; padding:10px 11px; color:var(--ink); background:#fff; }
+    button,.btn { border:1px solid #d7dde8; border-radius:9px; padding:10px 14px; background:#fff; color:var(--ink); text-decoration:none; cursor:pointer; font:inherit; }
+    .primary { background:var(--primary); border-color:var(--primary); color:#fff; } .danger { color:var(--danger); }
+    .status { margin:0 0 18px; padding:12px 14px; border-radius:10px; background:#edf2ff; color:#2448cf; }
+    table { width:100%; border-collapse:collapse; margin-top:18px; } th,td { text-align:left; padding:13px 10px; border-top:1px solid var(--line); } th { color:var(--muted); font-weight:600; }
+    td.cost { font-variant-numeric:tabular-nums; } .actions { display:flex; gap:8px; } .actions form { margin:0; }
+    .hint { color:var(--muted); font-size:13px; margin-top:14px; }
+    @media (max-width:700px) { .page { padding:24px 16px 48px; } .topbar { align-items:flex-start; flex-direction:column; } .form-grid { grid-template-columns:1fr; } .card { padding:18px; overflow:auto; } table { min-width:620px; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div><h1>人力成本管理</h1><p class="muted">按“流转模式 + 生效日期”维护人力成本，日期区间会自动衔接到下一条规则。</p></div>
+      <a class="btn" href="{{ url_for('index') }}">返回看板</a>
+    </header>
+    {% if status %}<div class="status" role="status">{{ status }}</div>{% endif %}
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title">新增规则</h2>
+      <form class="form-grid" action="{{ url_for('save_admin_rule') }}" method="post">
+        <input type="hidden" name="rule_id" id="rule-id">
+        <label>流转模式<input name="mode" id="rule-mode" list="mode-options" required placeholder="例如：爆量再植课"></label>
+        <label>人力成本<input name="labor_cost" id="rule-cost" type="number" min="0" step="0.01" required placeholder="元/例子"></label>
+        <label>生效日期<input name="effective_date" id="rule-date" type="date" required></label>
+        <button class="primary" type="submit" id="save-button">保存规则</button>
+      </form>
+      <datalist id="mode-options">{% for mode in modes %}<option value="{{ mode }}">{% endfor %}</datalist>
+      <p class="hint">同一模式的规则按生效日期分段：某天使用不晚于该天的最近一条规则。修改后请回看板点击“上传并更新”重新计算历史结果。</p>
+    </section>
+    <section class="card" aria-labelledby="list-title">
+      <h2 id="list-title">已配置规则</h2>
+      {% if rules %}
+      <table><thead><tr><th>流转模式</th><th>人力成本</th><th>生效日期</th><th>操作</th></tr></thead><tbody>
+        {% for rule in rules %}<tr>
+          <td>{{ rule['流转模式'] }}</td><td class="cost">{{ '%.2f'|format(rule['人力成本']) }}</td><td>{{ rule['生效日期'] }}</td>
+          <td class="actions"><button type="button" data-edit='{{ rule|tojson|forceescape }}'>编辑</button><form action="{{ url_for('delete_admin_rule') }}" method="post" onsubmit="return confirm('确认删除这条人力成本规则？');"><input type="hidden" name="rule_id" value="{{ rule['id'] }}"><button class="danger" type="submit">删除</button></form></td>
+        </tr>{% endfor %}
+      </tbody></table>
+      {% else %}<p class="muted">暂无规则。</p>{% endif %}
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll('[data-edit]').forEach((button) => button.addEventListener('click', () => {
+      const rule = JSON.parse(button.dataset.edit);
+      document.querySelector('#rule-id').value = rule.id;
+      document.querySelector('#rule-mode').value = rule['流转模式'];
+      document.querySelector('#rule-cost').value = rule['人力成本'];
+      document.querySelector('#rule-date').value = rule['生效日期'];
+      document.querySelector('#save-button').textContent = '保存修改';
+      document.querySelector('#form-title').textContent = '编辑规则';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+  </script>
+</body>
+</html>
