@@ -33,6 +33,8 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(4.5, rows[0][4])
 
     def test_compute_result_uses_existing_cost_rules(self):
+        original_db = S.DB_PATH
+        original_seed_db = S.SEED_DB_PATH
         tongshi_rows = [
             {"日期": "2026-08-01", "模式": "大神", "学部": "小学", "AI接通数": 200, "例子数": 10, "话单分钟数": 100},
             {"日期": "2026-08-01", "模式": "爆量算法池", "学部": "高中", "AI接通数": 400, "例子数": 20, "话单分钟数": 80},
@@ -48,7 +50,15 @@ class TestPipeline(unittest.TestCase):
             {"日期": "2026-08-01", "流转模式": "爆量本地化", "单量": 80, "出勤": 10},
         ]
 
-        rows, skipped = pipeline.compute_result(tongshi_rows, zhuanhua_rows)
+        with tempfile.TemporaryDirectory() as tmp:
+            S.DB_PATH = Path(tmp) / "rules.db"
+            S.SEED_DB_PATH = Path(tmp) / "missing-seed.db"
+            try:
+                pipeline.init_db()
+                rows, skipped = pipeline.compute_result(tongshi_rows, zhuanhua_rows)
+            finally:
+                S.DB_PATH = original_db
+                S.SEED_DB_PATH = original_seed_db
 
         self.assertEqual([], skipped)
         by_key = {(r[1], r[2]): r for r in rows}

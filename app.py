@@ -133,6 +133,12 @@ def _short_command_output(result: subprocess.CompletedProcess[str]) -> str:
     return output[:240] + ("…" if len(output) > 240 else "")
 
 
+def _python_executable() -> str:
+    if Path(sys.executable).exists():
+        return sys.executable
+    return shutil.which("python3") or shutil.which("python") or sys.executable
+
+
 def _run_publish_step(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         args,
@@ -146,7 +152,7 @@ def _run_publish_step(args: list[str], timeout: int = 120) -> subprocess.Complet
 
 
 def _publish_readonly_snapshot() -> tuple[bool, str]:
-    export = _run_publish_step([sys.executable, "scripts/export_readonly.py"])
+    export = _run_publish_step([_python_executable(), "scripts/export_readonly.py"])
     if export.returncode != 0:
         return False, "本地数据已更新，但公开页导出失败：" + _short_command_output(export)
 
@@ -260,6 +266,18 @@ def _fmt_int(value: object) -> str:
     if value is None:
         return "-"
     return str(int(round(float(value))))
+
+
+@app.template_filter("date_with_weekday")
+def _date_with_weekday(value: object) -> str:
+    """Keep ISO dates for values while adding a Chinese weekday to labels."""
+    text = str(value or "")
+    try:
+        parsed = datetime.strptime(text, "%Y-%m-%d")
+    except ValueError:
+        return text
+    weekdays = ("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+    return f"{text} {weekdays[parsed.weekday()]}"
 
 
 @app.route("/favicon.ico")
@@ -470,6 +488,27 @@ def _download_url(filters: dict[str, object]) -> str:
     return url_for("download") + "?" + urlencode(args)
 
 
+def _recalculate_fixed_data() -> tuple[bool, str]:
+    """Rebuild stored results after a rule change, using the current fixed inputs."""
+    paths = (S.FIXED_TONGSHI_PATH, S.FIXED_ZHUANHUA_PATH, S.FIXED_MUBIAO_PATH)
+    missing_files = [path.name for path in paths if not path.exists()]
+    if missing_files:
+        return False, "固定文件缺失：" + "、".join(missing_files)
+    tongshi_rows = load_sheet(paths[0])
+    zhuanhua_rows = load_sheet(paths[1])
+    mubiao_rows = load_sheet(paths[2])
+    missing = (
+        validate_headers(tongshi_rows, S.TONGSHI_REQUIRED)
+        + validate_headers(zhuanhua_rows, S.ZHUANHUA_REQUIRED)
+        + validate_headers(mubiao_rows, S.MUBIAO_REQUIRED)
+    )
+    if missing:
+        return False, "表头缺失：" + "、".join(sorted(set(missing)))
+    rows, skipped = compute_result(tongshi_rows, zhuanhua_rows, mubiao_rows)
+    upsert_rows(rows)
+    return True, f"已自动重算 {len(rows)} 行，跳过 {len(skipped)} 行。"
+
+
 @app.route("/", methods=["GET"])
 def index():
     chart_filters = _filters_from_request("chart", default_view="7d")
@@ -483,6 +522,7 @@ def index():
         mode=table_filters["modes"],
         xuebu=table_filters["xuebus"],
     )
+
     trend = fetch_cost_trend(
         view=str(chart_filters["view"]),
         start=chart_filters["start"],
@@ -544,7 +584,9 @@ def save_admin_rule():
         save_labor_cost_rule(mode, cost, effective_date, rule_id)
     except (TypeError, ValueError, sqlite3.IntegrityError):
         return redirect(url_for("admin", status="保存失败：请填写流转模式、有效日期和不小于 0 的人力成本。"))
-    return redirect(url_for("admin", status="已保存规则；重新上传并更新后，新规则才会写入结果数据。"))
+    recalculated, detail = _recalculate_fixed_data()
+    prefix = "已保存规则；" if recalculated else "规则已保存，但结果未重算；"
+    return redirect(url_for("admin", status=prefix + detail))
 
 
 @app.route("/admin/rules/delete", methods=["POST"])

@@ -42,7 +42,7 @@
         <button class="primary" type="submit" id="save-button">保存规则</button>
       </form>
       <datalist id="mode-options">{% for mode in modes %}<option value="{{ mode }}">{% endfor %}</datalist>
-      <p class="hint">同一模式的规则按生效日期分段：某天使用不晚于该天的最近一条规则。修改后请回看板点击“上传并更新”重新计算历史结果。</p>
+      <p class="hint">同一模式的规则按生效日期分段：某天使用不晚于该天的最近一条规则。保存后会自动使用当前固定文件重算本地结果。</p>
     </section>
     <section class="card" aria-labelledby="list-title">
       <h2 id="list-title">已配置规则</h2>

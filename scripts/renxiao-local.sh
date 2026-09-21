@@ -17,7 +17,16 @@ Usage: $0 <install|start|stop|restart|status|open|logs|uninstall>
 EOF
 }
 ensure_project() { [[ -f "$APP" ]] || { echo "Project app not found: $APP" >&2; exit 1; }; }
-ensure_python() { [[ -x "$PYTHON" ]] || { echo "Virtualenv python not found: $PYTHON" >&2; exit 1; }; }
+repair_venv_python() {
+  [[ -x "$PYTHON" ]] && return 0
+  local base_python
+  base_python="$(awk -F ' = ' '$1 == "executable" {print $2; exit}' "$PROJECT_DIR/.venv/pyvenv.cfg" 2>/dev/null || true)"
+  if [[ -n "$base_python" && -x "$base_python" ]]; then
+    ln -sf "$base_python" "$PROJECT_DIR/.venv/bin/python3"
+    ln -sf python3 "$PYTHON"
+  fi
+}
+ensure_python() { repair_venv_python; [[ -x "$PYTHON" ]] || { echo "Virtualenv python not found: $PYTHON" >&2; exit 1; }; }
 ensure_logs() { mkdir -p "$LOG_DIR" "$HOME/Library/LaunchAgents"; }
 write_plist() {
   ensure_logs
@@ -111,7 +120,7 @@ EOF
 install_agent() { ensure_project; ensure_python; write_plist; launchctl_print && launchctl bootout "gui/$UID" "$PLIST" >/dev/null 2>&1 || true; stop_manual_project_process; launchctl bootstrap "gui/$UID" "$PLIST"; launchctl kickstart -k "gui/$UID/$LABEL"; wait_for_health; status; }
 start_agent() { ensure_project; ensure_python; [[ -f "$PLIST" ]] || write_plist; launchctl_print || { stop_manual_project_process; launchctl bootstrap "gui/$UID" "$PLIST"; }; launchctl kickstart -k "gui/$UID/$LABEL"; wait_for_health; status; }
 stop_agent() { launchctl_print && launchctl bootout "gui/$UID" "$PLIST" || echo "LaunchAgent is not loaded."; }
-restart_agent() { launchctl_print && launchctl kickstart -k "gui/$UID/$LABEL" || { start_agent; return; }; wait_for_health; status; }
+restart_agent() { ensure_project; ensure_python; launchctl_print && launchctl kickstart -k "gui/$UID/$LABEL" || { start_agent; return; }; wait_for_health; status; }
 status() {
   echo "LaunchAgent: $LABEL"
   launchctl_print && echo "Loaded: yes" || echo "Loaded: no"

@@ -3,16 +3,23 @@ import subprocess
 from unittest.mock import patch
 
 from app import (
+    _date_with_weekday,
     _daily_broadcast,
     _github_publish_blocker,
     _publish_env,
     _publish_readonly_snapshot,
+    _python_executable,
     _table_aggregate,
     _table_daily_aggregates,
+    app,
 )
 
 
 class TestAppAggregates(unittest.TestCase):
+    def test_date_label_includes_chinese_weekday_without_changing_value(self):
+        self.assertEqual("2026-09-18 周五", _date_with_weekday("2026-09-18"))
+        self.assertEqual("not-a-date", _date_with_weekday("not-a-date"))
+
     def test_table_aggregate_uses_source_denominators(self):
         rows = [
             {
@@ -185,6 +192,18 @@ class TestAppAggregates(unittest.TestCase):
 
 
 class TestReadonlyPublish(unittest.TestCase):
+    def test_admin_rule_save_recalculates_results(self):
+        with patch("app.save_labor_cost_rule") as save_rule, patch(
+            "app._recalculate_fixed_data", return_value=(True, "已自动重算 1 行，跳过 0 行。")
+        ) as recalculate:
+            response = app.test_client().post(
+                "/admin/rules",
+                data={"mode": "爆量再植课", "labor_cost": "27", "effective_date": "2026-09-11"},
+            )
+
+        self.assertEqual(302, response.status_code)
+        save_rule.assert_called_once_with("爆量再植课", 27.0, "2026-09-11", None)
+        recalculate.assert_called_once_with()
     def test_publish_env_uses_system_proxy_when_launch_agent_has_no_shell_proxy(self):
         with patch.dict("os.environ", {}, clear=True), patch(
             "app._system_https_proxy_url", return_value="http://127.0.0.1:21081"
@@ -209,6 +228,12 @@ class TestReadonlyPublish(unittest.TestCase):
 
         self.assertIn("没有检测到可用 GitHub 代理", message)
 
+    def test_python_executable_falls_back_when_current_interpreter_path_is_stale(self):
+        with patch("app.sys.executable", "/missing/.venv/bin/python"), patch("app.Path.exists", return_value=False), patch(
+            "app.shutil.which", side_effect=lambda name: "/usr/bin/python3" if name == "python3" else None
+        ):
+            self.assertEqual("/usr/bin/python3", _python_executable())
+
     def test_publish_skips_commit_when_snapshot_has_no_change(self):
         calls = []
 
@@ -221,6 +246,8 @@ class TestReadonlyPublish(unittest.TestCase):
 
         self.assertTrue(ok)
         self.assertIn("无需发布", message)
+        self.assertTrue(calls[0][0])
+        self.assertEqual("scripts/export_readonly.py", calls[0][1])
         self.assertEqual(
             [
                 ["git", "diff", "--quiet", "HEAD", "--", "docs/index.html"],

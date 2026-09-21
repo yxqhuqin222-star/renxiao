@@ -264,6 +264,7 @@
       background: transparent;
       font: inherit;
       text-align: left;
+      font-variant-numeric: tabular-nums;
     }
     .date-option[aria-selected="true"] {
       background: var(--primary-soft);
@@ -380,13 +381,6 @@
       color: var(--ink-muted);
       font-size: 12.5px;
       font-variant-numeric: tabular-nums;
-    }
-    .broadcast-notice {
-      margin: 0;
-      max-width: 520px;
-      color: var(--warning);
-      font-size: 12.5px;
-      text-align: right;
     }
     .broadcast-summary {
       display: grid;
@@ -747,7 +741,6 @@
       .broadcast-button { width: 100%; }
       .broadcast-button-text { display: inline; }
       .broadcast-head { flex-direction: column; }
-      .broadcast-notice { text-align: left; }
       .controls { align-items: stretch; }
       .table-actions { justify-content: stretch; }
       .result-summary { grid-template-columns: 1fr; }
@@ -819,7 +812,6 @@
             上周同日：{{ daily_broadcast.last_week or "-" }}
           </div>
         </div>
-        <p class="broadcast-notice">{{ daily_broadcast.notice }}</p>
       </div>
       <div class="broadcast-summary" aria-label="今日核心指标">
         <div class="broadcast-stat"><span>数据行数</span><b>{{ daily_broadcast.row_count }}</b></div>
@@ -907,7 +899,7 @@
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not chart_filters.start else 'false' }}">开始</button>
                   {% for date in dates %}
-                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if chart_filters.start == date else 'false' }}">{{ date }}</button>
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if chart_filters.start == date else 'false' }}">{{ date|date_with_weekday }}</button>
                   {% endfor %}
                 </div>
               </details>
@@ -921,7 +913,7 @@
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not chart_filters.end else 'false' }}">结束</button>
                   {% for date in dates %}
-                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if chart_filters.end == date else 'false' }}">{{ date }}</button>
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if chart_filters.end == date else 'false' }}">{{ date|date_with_weekday }}</button>
                   {% endfor %}
                 </div>
               </details>
@@ -984,7 +976,7 @@
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not table_filters.start else 'false' }}">开始</button>
                   {% for date in dates %}
-                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if table_filters.start == date else 'false' }}">{{ date }}</button>
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if table_filters.start == date else 'false' }}">{{ date|date_with_weekday }}</button>
                   {% endfor %}
                 </div>
               </details>
@@ -998,7 +990,7 @@
                 <div class="mode-menu date-menu">
                   <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not table_filters.end else 'false' }}">结束</button>
                   {% for date in dates %}
-                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if table_filters.end == date else 'false' }}">{{ date }}</button>
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if table_filters.end == date else 'false' }}">{{ date|date_with_weekday }}</button>
                   {% endfor %}
                 </div>
               </details>
