@@ -16,17 +16,29 @@ from app import (
 
 
 class TestAppAggregates(unittest.TestCase):
-    def test_filter_forms_anchor_to_their_updated_section(self):
+    def test_page_omits_top_kpi_strip(self):
         response = app.test_client().get("/")
         html = response.get_data(as_text=True)
 
         self.assertEqual(200, response.status_code)
-        self.assertIn('action="/#cost-trend-card"', html)
-        self.assertIn('action="/#rate-trend-card"', html)
-        self.assertIn('action="/#results"', html)
-        self.assertIn('data-scroll-target="cost-trend-card"', html)
-        self.assertIn('data-scroll-target="rate-trend-card"', html)
-        self.assertIn('data-scroll-target="results"', html)
+        self.assertNotIn('class="kpi-strip"', html)
+        self.assertNotIn('data-kpi=', html)
+
+    def test_filter_forms_preserve_their_viewport_position_after_query(self):
+        response = app.test_client().get("/")
+        html = response.get_data(as_text=True)
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn('id="chart-form"', html)
+        self.assertIn('id="rate-chart-form"', html)
+        self.assertIn('id="table-form"', html)
+        self.assertNotIn('action="/#cost-trend-card"', html)
+        self.assertNotIn('action="/#rate-trend-card"', html)
+        self.assertNotIn('action="/#results"', html)
+        self.assertIn('const scrollRestoreKey = "renxiao-filter-scroll-restore";', html)
+        self.assertIn('form.getBoundingClientRect().top', html)
+        self.assertIn('window.scrollBy(0, form.getBoundingClientRect().top - restoreState.viewportTop);', html)
+        self.assertNotIn('destination.hash =', html)
         self.assertIn('data-reset="chart"', html)
         self.assertIn('data-reset="rate-chart"', html)
         self.assertIn('data-reset="table"', html)

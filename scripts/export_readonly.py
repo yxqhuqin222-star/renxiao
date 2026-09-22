@@ -270,21 +270,6 @@ CLIENT_JS = r"""
     }, []);
   }
 
-  function renderKpi(rows) {
-    var agg = aggregate(rows);
-    var map = {
-      efficiency: agg.efficiency,
-      total_examples: agg.total_examples,
-      line_cost: agg.line_cost,
-      case_cost: agg.case_cost,
-      rate: agg.rate
-    };
-    Object.keys(map).forEach(function (k) {
-      var el = document.querySelector('[data-kpi="' + k + '"]');
-      if (el) el.textContent = map[k];
-    });
-  }
-
   function applyChart() {
     var f = readForm(document.getElementById('chart-form'));
     var pts = costTrendPoints(f);
@@ -309,7 +294,6 @@ CLIENT_JS = r"""
     var f = readForm(document.getElementById('table-form'));
     var rows = filterRows(f, true);
     renderTable(rows, f);
-    renderKpi(rows);
   }
 
   function resetForm(form, defaultView) {

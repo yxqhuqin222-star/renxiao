@@ -680,45 +680,6 @@
       color: var(--ink-muted);
     }
 
-    /* === KPI 概览带（P0: 顶部核心指标） === */
-    .kpi-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 14px;
-      margin-bottom: 22px;
-    }
-    .kpi {
-      position: relative;
-      overflow: hidden;
-      min-width: 0;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      padding: 15px 18px 15px 22px;
-    }
-    .kpi::before {
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 4px;
-      background: var(--primary);
-    }
-    .kpi-label {
-      display: block;
-      color: var(--ink-muted);
-      font-size: 12.5px;
-      font-weight: 680;
-    }
-    .kpi-value {
-      display: block;
-      margin-top: 6px;
-      color: var(--ink);
-      font-size: 26px;
-      font-weight: 760;
-      line-height: 1.15;
-      font-variant-numeric: tabular-nums;
-    }
     /* === 曲线均值参考线（P0: 目标/均值参考） === */
     .trend-mean {
       fill: none;
@@ -734,7 +695,6 @@
     }
 
     @media (max-width: 860px) {
-      .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .page { padding: 24px 14px 48px; }
       .topbar, .table-head, .section-head { align-items: stretch; flex-direction: column; }
       .chart-head { align-items: stretch; flex-direction: column; }
@@ -789,14 +749,6 @@
         <div class="latest-badge">最新：2026-09-21</div>
       </div>
     </header>
-
-    <section class="kpi-strip" aria-label="核心指标概览（最新一天）">
-      <div class="kpi"><span class="kpi-label">人效</span><span class="kpi-value" data-kpi="efficiency">5.3</span></div>
-      <div class="kpi"><span class="kpi-label">单量</span><span class="kpi-value" data-kpi="total_examples">213</span></div>
-      <div class="kpi"><span class="kpi-label">线路成本</span><span class="kpi-value" data-kpi="line_cost">13.7</span></div>
-      <div class="kpi"><span class="kpi-label">单例子结算成本</span><span class="kpi-value" data-kpi="case_cost">45.7</span></div>
-      <div class="kpi"><span class="kpi-label">接通转化率</span><span class="kpi-value" data-kpi="rate">0.70%</span></div>
-    </section>
 
 
 
@@ -2361,6 +2313,38 @@
       });
     });
 
+    const scrollRestoreKey = "renxiao-filter-scroll-restore";
+
+    const restoreFilterViewportPosition = () => {
+      const savedState = window.sessionStorage.getItem(scrollRestoreKey);
+      if (!savedState) {
+        return;
+      }
+
+      let restoreState;
+      try {
+        restoreState = JSON.parse(savedState);
+      } catch {
+        window.sessionStorage.removeItem(scrollRestoreKey);
+        return;
+      }
+
+      const form = document.getElementById(restoreState.formId);
+      if (!form || !Number.isFinite(restoreState.viewportTop)) {
+        window.sessionStorage.removeItem(scrollRestoreKey);
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollBy(0, form.getBoundingClientRect().top - restoreState.viewportTop);
+          window.sessionStorage.removeItem(scrollRestoreKey);
+        });
+      });
+    };
+
+    restoreFilterViewportPosition();
+
     document.querySelectorAll(".js-range-form[data-scroll-target]").forEach((form) => {
       if (form.dataset.staticReadonly === "true") {
         return;
@@ -2369,7 +2353,10 @@
         event.preventDefault();
         const destination = new URL(form.action, window.location.href);
         destination.search = new URLSearchParams(new FormData(form)).toString();
-        destination.hash = form.dataset.scrollTarget;
+        window.sessionStorage.setItem(scrollRestoreKey, JSON.stringify({
+          formId: form.id,
+          viewportTop: form.getBoundingClientRect().top,
+        }));
         window.location.assign(destination.toString());
       });
     });
@@ -2837,21 +2824,6 @@
     }, []);
   }
 
-  function renderKpi(rows) {
-    var agg = aggregate(rows);
-    var map = {
-      efficiency: agg.efficiency,
-      total_examples: agg.total_examples,
-      line_cost: agg.line_cost,
-      case_cost: agg.case_cost,
-      rate: agg.rate
-    };
-    Object.keys(map).forEach(function (k) {
-      var el = document.querySelector('[data-kpi="' + k + '"]');
-      if (el) el.textContent = map[k];
-    });
-  }
-
   function applyChart() {
     var f = readForm(document.getElementById('chart-form'));
     var pts = costTrendPoints(f);
@@ -2876,7 +2848,6 @@
     var f = readForm(document.getElementById('table-form'));
     var rows = filterRows(f, true);
     renderTable(rows, f);
-    renderKpi(rows);
   }
 
   function resetForm(form, defaultView) {
