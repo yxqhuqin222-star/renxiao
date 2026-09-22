@@ -4,7 +4,7 @@ The published GitHub Pages page keeps the full filtering UI (date range,
 mode multi-select, xuebu multi-select) but runs it **entirely client-side**:
 the full dataset is embedded as JSON and the browser filters/aggregates it
 with the exact same semantics as ``pipeline.fetch_filtered`` /
-``pipeline._table_aggregate`` / ``pipeline.fetch_cost_trend``.
+``pipeline._table_aggregate`` / the daily trend queries.
 
 No backend, no upload, no download, no database writes. Opening the link
 shows the default view; changing filters re-renders instantly in the browser.
@@ -47,6 +47,7 @@ CLIENT_JS = r"""
   var costDecimals = data.costDecimals;
   var DEFAULT_TABLE = 'latest';
   var DEFAULT_CHART = '7d';
+  var DEFAULT_RATE_CHART = '7d';
 
   function fmtNum(v, d) { return v == null ? '-' : Number(v).toFixed(d); }
   function fmtInt(v) { return v == null ? '-' : String(Math.round(Number(v))); }
@@ -228,13 +229,14 @@ CLIENT_JS = r"""
       '共 <b>' + rows.length + '</b> 行 <span>' + viewLabel(f) + '</span>';
   }
 
-  function trendPoints(f) {
+  function costTrendPoints(f) {
     var pred = datePredicate(f.view, f.start, f.end);
     var seen = {};
     allRows.forEach(function (r) {
       if (Number(r['单量']) <= 0) return;
       if (!pred(r)) return;
       if (f.modes.length && f.modes.indexOf(r['流转模式']) === -1) return;
+      if (f.xuebus.length && f.xuebus.indexOf(r['学部']) === -1) return;
       var d = r['日期'];
       var b = seen[d] || (seen[d] = { cost: 0, vol: 0 });
       b.cost += (Number(r['单例子结算成本']) || 0) * (Number(r['单量']) || 0);
@@ -244,6 +246,28 @@ CLIENT_JS = r"""
       var b = seen[d];
       return { '日期': d, '聚合单例子结算成本': b.vol > 0 ? Number((b.cost / b.vol).toFixed(costDecimals)) : 0, '总单量': b.vol };
     });
+  }
+
+  function rateTrendPoints(f) {
+    var pred = datePredicate(f.view, f.start, f.end);
+    var seen = {};
+    allRows.forEach(function (r) {
+      if (Number(r['单量']) <= 0) return;
+      if (!pred(r)) return;
+      if (f.modes.length && f.modes.indexOf(r['流转模式']) === -1) return;
+      if (f.xuebus.length && f.xuebus.indexOf(r['学部']) === -1) return;
+      var d = r['日期'];
+      var b = seen[d] || (seen[d] = { vol: 0, ai: 0 });
+      b.vol += Number(r['单量']) || 0;
+      b.ai += Number(r['AI接通数']) || 0;
+    });
+    return Object.keys(seen).sort().reduce(function (points, d) {
+      var b = seen[d];
+      if (b.ai > 0) {
+        points.push({ '日期': d, '聚合接通转化率': Number((b.vol / b.ai).toFixed(6)), '总单量': b.vol, '总AI接通数': b.ai });
+      }
+      return points;
+    }, []);
   }
 
   function renderKpi(rows) {
@@ -263,12 +287,22 @@ CLIENT_JS = r"""
 
   function applyChart() {
     var f = readForm(document.getElementById('chart-form'));
-    var pts = trendPoints(f);
+    var pts = costTrendPoints(f);
     var chartBox = document.getElementById('trend-chart');
     chartBox.dataset.points = JSON.stringify(pts);
     if (typeof window.renderTrendChart === 'function') window.renderTrendChart();
     var el = document.getElementById('trend-latest');
     if (el) el.textContent = pts.length ? Number(pts[pts.length - 1]['聚合单例子结算成本']).toFixed(1) : '-';
+  }
+
+  function applyRateChart() {
+    var f = readForm(document.getElementById('rate-chart-form'));
+    var pts = rateTrendPoints(f);
+    var chartBox = document.getElementById('rate-trend-chart');
+    chartBox.dataset.points = JSON.stringify(pts);
+    if (typeof window.renderRateTrendChart === 'function') window.renderRateTrendChart();
+    var el = document.getElementById('rate-trend-latest');
+    if (el) el.textContent = pts.length ? (Number(pts[pts.length - 1]['聚合接通转化率']) * 100).toFixed(1) + '%' : '-';
   }
 
   function applyTable() {
@@ -304,13 +338,15 @@ CLIENT_JS = r"""
 
   function apply(form) {
     if (form.id === 'chart-form') applyChart();
+    else if (form.id === 'rate-chart-form') applyRateChart();
     else if (form.id === 'table-form') applyTable();
   }
 
   function bind() {
     var chartForm = document.getElementById('chart-form');
+    var rateChartForm = document.getElementById('rate-chart-form');
     var tableForm = document.getElementById('table-form');
-    [chartForm, tableForm].forEach(function (form) {
+    [chartForm, rateChartForm, tableForm].forEach(function (form) {
       if (!form) return;
       form.addEventListener('submit', function (e) { e.preventDefault(); });
       form.addEventListener('click', function (e) {
@@ -324,15 +360,17 @@ CLIENT_JS = r"""
     document.querySelectorAll('[data-reset]').forEach(function (link) {
       link.addEventListener('click', function (e) {
         e.preventDefault();
-        var isChart = link.dataset.reset === 'chart';
-        var form = isChart ? chartForm : tableForm;
-        resetForm(form, isChart ? DEFAULT_CHART : DEFAULT_TABLE);
+        var type = link.dataset.reset;
+        var form = type === 'chart' ? chartForm : type === 'rate-chart' ? rateChartForm : tableForm;
+        var defaultView = type === 'chart' ? DEFAULT_CHART : type === 'rate-chart' ? DEFAULT_RATE_CHART : DEFAULT_TABLE;
+        resetForm(form, defaultView);
         apply(form);
       });
     });
     // Apply once on load so the initial render uses the same maxDate-anchored
     // baseline as every later interaction (no mixed today-vs-maxDate basis).
     applyChart();
+    applyRateChart();
     applyTable();
   }
 
@@ -360,27 +398,22 @@ def _remove_download(html: str) -> str:
 
 
 def _relabel_forms(html: str) -> str:
-    html = html.replace(
-        '<form class="controls chart-controls js-range-form" action="/" method="get">',
-        '<form id="chart-form" class="controls chart-controls js-range-form" method="get" onsubmit="return false">',
-    )
-    html = html.replace(
-        '<form class="controls js-range-form" action="/" method="get">',
-        '<form id="table-form" class="controls js-range-form" method="get" onsubmit="return false">',
-    )
+    for form_id in ("chart-form", "rate-chart-form", "table-form"):
+        html = re.sub(
+            rf'(<form id="{form_id}"[^>]*) action="/(?:#[^"]*)?" method="get">',
+            r'\1 method="get" onsubmit="return false">',
+            html,
+        )
     return html
 
 
 def _relabel_resets(html: str) -> str:
-    pat = re.compile(r'<a class="btn btn-secondary" href="/\?[^"]*">重置</a>')
-    matches = list(pat.finditer(html))
-    if len(matches) >= 1:
-        m0 = matches[0]
-        html = html[: m0.start()] + '<a class="btn btn-secondary" href="#" data-reset="chart">重置</a>' + html[m0.end():]
-        remaining = list(pat.finditer(html))
-        if remaining:
-            m1 = remaining[0]
-            html = html[: m1.start()] + '<a class="btn btn-secondary" href="#" data-reset="table">重置</a>' + html[m1.end():]
+    for target in ("chart", "rate-chart", "table"):
+        html = re.sub(
+            rf'<a class="btn btn-secondary" href="/\?[^"]*" data-reset="{target}">重置</a>',
+            f'<a class="btn btn-secondary" href="#" data-reset="{target}">重置</a>',
+            html,
+        )
     return html
 
 

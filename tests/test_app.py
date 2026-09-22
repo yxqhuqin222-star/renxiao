@@ -16,6 +16,20 @@ from app import (
 
 
 class TestAppAggregates(unittest.TestCase):
+    def test_filter_forms_anchor_to_their_updated_section(self):
+        response = app.test_client().get("/")
+        html = response.get_data(as_text=True)
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn('action="/#cost-trend-card"', html)
+        self.assertIn('action="/#rate-trend-card"', html)
+        self.assertIn('action="/#results"', html)
+        self.assertIn('data-reset="chart"', html)
+        self.assertIn('data-reset="rate-chart"', html)
+        self.assertIn('data-reset="table"', html)
+        self.assertIn('name="chart_xuebu"', html)
+        self.assertIn('name="rate_chart_xuebu"', html)
+
     def test_date_label_includes_chinese_weekday_without_changing_value(self):
         self.assertEqual("2026-09-18 周五", _date_with_weekday("2026-09-18"))
         self.assertEqual("not-a-date", _date_with_weekday("not-a-date"))

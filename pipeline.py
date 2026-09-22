@@ -444,6 +444,43 @@ def fetch_cost_trend(
     return rows
 
 
+def fetch_conversion_rate_trend(
+    view: str = "latest",
+    start: str | None = None,
+    end: str | None = None,
+    mode: str | list[str] | tuple[str, ...] | None = None,
+    xuebu: str | list[str] | tuple[str, ...] | None = None,
+) -> list[dict[str, Any]]:
+    """Return daily connection-conversion rates from their source denominators."""
+    init_db()
+    conn = sqlite3.connect(S.DB_PATH)
+    conn.row_factory = sqlite3.Row
+    where = [_xuebu_in_sql(), "COALESCE(单量, 0) > 0"]
+    params: list[Any] = list(S.XUBU_WHITELIST)
+
+    _apply_date_filter(where, params, view, start, end)
+
+    modes = _normalize_modes(mode)
+    if modes:
+        where.append("流转模式 IN (" + ",".join("?" for _ in modes) + ")")
+        params.extend(modes)
+    xuebus = _normalize_xuebus(xuebu)
+    if xuebus:
+        where.append("学部 IN (" + ",".join("?" for _ in xuebus) + ")")
+        params.extend(xuebus)
+
+    sql = (
+        "SELECT 日期, ROUND(SUM(单量) / SUM(AI接通数), 6) AS 聚合接通转化率, "
+        "SUM(单量) AS 总单量, SUM(AI接通数) AS 总AI接通数 "
+        "FROM result WHERE "
+        + " AND ".join(where)
+        + " GROUP BY 日期 HAVING SUM(AI接通数) > 0 ORDER BY 日期 ASC"
+    )
+    rows = [dict(row) for row in conn.execute(sql, params).fetchall()]
+    conn.close()
+    return rows
+
+
 def distinct_modes() -> list[str]:
     init_db()
     conn = sqlite3.connect(S.DB_PATH)

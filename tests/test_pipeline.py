@@ -140,6 +140,33 @@ class TestPipeline(unittest.TestCase):
             self.assertAlmostEqual(trend[1]["聚合单例子结算成本"], 90.0)
         S.DB_PATH = original_db
 
+    def test_fetch_conversion_rate_trend_uses_source_denominators(self):
+        original_db = S.DB_PATH
+        with tempfile.TemporaryDirectory() as tmp:
+            S.DB_PATH = Path(tmp) / "test.db"
+            pipeline.upsert_rows(
+                [
+                    ("2026-08-01", "大神", "小学", 4.0, 4.5, 10.0, 100.0, 0.01, 10.0, 2.5, 10.0, 100.0),
+                    ("2026-08-01", "爆量算法池", "高中", 5.0, 5.5, 20.0, 40.0, 0.02, 30.0, 6.0, 30.0, 300.0),
+                    ("2026-08-01", "9.9池", "初中", 2.0, 2.5, 30.0, 160.0, 0.03, 60.0, 30.0, 60.0, 200.0),
+                    ("2026-08-02", "大神", "小学", 4.0, 4.5, 10.0, 120.0, 0.01, 20.0, 5.0, 20.0, 200.0),
+                    ("2026-08-02", "爆量算法池", "高中", 5.0, 5.5, 20.0, 60.0, 0.02, 20.0, 4.0, 20.0, 300.0),
+                ]
+            )
+
+            trend = pipeline.fetch_conversion_rate_trend(view="all", mode=["大神", "爆量算法池"])
+
+            self.assertEqual(["2026-08-01", "2026-08-02"], [row["日期"] for row in trend])
+            self.assertAlmostEqual(trend[0]["聚合接通转化率"], 0.1)
+            self.assertAlmostEqual(trend[1]["聚合接通转化率"], 0.08)
+            self.assertEqual(400.0, trend[0]["总AI接通数"])
+
+            elementary_trend = pipeline.fetch_conversion_rate_trend(view="all", xuebu=["小学"])
+            self.assertEqual(["2026-08-01", "2026-08-02"], [row["日期"] for row in elementary_trend])
+            self.assertAlmostEqual(elementary_trend[0]["聚合接通转化率"], 0.1)
+            self.assertAlmostEqual(elementary_trend[1]["聚合接通转化率"], 0.1)
+        S.DB_PATH = original_db
+
     def test_generate_result_xlsx_headers(self):
         buf = pipeline.generate_result_xlsx(
             [

@@ -97,6 +97,7 @@
       box-shadow: var(--shadow);
       padding: 20px 22px;
     }
+    #cost-trend-card, #rate-trend-card, #results { scroll-margin-top: 18px; }
     .eyebrow {
       margin: 0 0 10px;
       color: var(--ink-soft);
@@ -867,7 +868,7 @@
     </section>
 
     <div class="stack">
-      <section class="card chart-card" aria-labelledby="trend-title">
+      <section class="card chart-card" id="cost-trend-card" aria-labelledby="trend-title">
         <div class="chart-head">
           <div class="chart-title-wrap">
             <h2 class="section-title" id="trend-title">单例子结算成本变化曲线</h2>
@@ -877,7 +878,7 @@
             <b id="trend-latest">-</b>
           </div>
         </div>
-<form class="controls chart-controls js-range-form" action="{{ url_for('index') }}" method="get">
+<form id="chart-form" class="controls chart-controls js-range-form" action="{{ url_for('index') }}#cost-trend-card" method="get">
           {% for item in chart_preserve_args %}
             <input type="hidden" name="{{ item.name }}" value="{{ item.value }}">
           {% endfor %}
@@ -933,8 +934,22 @@
               </div>
             </details>
           </div>
+          <div class="field">
+            <span class="field-label">学部</span>
+            <details class="mode-dropdown js-mode-dropdown" id="chart-xuebu">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu">
+                {% for xuebu in xuebus %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="chart_xuebu" value="{{ xuebu }}" {{ "checked" if xuebu in chart_filters.xuebus else "" }}>
+                    <span>{{ xuebu }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
           <button class="btn btn-primary" type="submit">查询</button>
-          <a class="btn btn-secondary" href="{{ chart_reset_url }}">重置</a>
+          <a class="btn btn-secondary" href="{{ chart_reset_url }}#cost-trend-card" data-reset="chart">重置</a>
         </form>
         <div class="chart-wrap" id="trend-chart" data-points='{{ trend|tojson }}'>
           <svg class="chart-svg" role="img" aria-labelledby="trend-title" aria-describedby="trend-desc"></svg>
@@ -948,13 +963,108 @@
         </div>
       </section>
 
-      <section class="card" aria-labelledby="filter-title">
+      <section class="card chart-card" id="rate-trend-card" aria-labelledby="rate-trend-title">
+        <div class="chart-head">
+          <div class="chart-title-wrap">
+            <h2 class="section-title" id="rate-trend-title">接通转化率变化曲线</h2>
+          </div>
+          <div class="chart-stat">
+            当前最后一天
+            <b id="rate-trend-latest">-</b>
+          </div>
+        </div>
+        <form id="rate-chart-form" class="controls chart-controls rate-chart-controls js-range-form" action="{{ url_for('index') }}#rate-trend-card" method="get">
+          {% for item in rate_chart_preserve_args %}
+            <input type="hidden" name="{{ item.name }}" value="{{ item.value }}">
+          {% endfor %}
+          <div class="field date-range-field">
+            <span class="field-label">日期范围</span>
+            <input type="hidden" name="rate_chart_view" class="js-view-input" value="{{ rate_chart_filters.view }}">
+            <div class="segmented" role="group" aria-label="接通转化率曲线日期范围">
+              {% for value, label in [("latest", "最新一天"), ("all", "全部历史"), ("7d", "近 7 天"), ("custom", "自定义")] %}
+                <button class="segment" type="button" data-view="{{ value }}" aria-pressed="{{ 'true' if rate_chart_filters.view == value else 'false' }}">{{ label }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="custom-range {{ 'is-visible' if rate_chart_filters.view == 'custom' else '' }}">
+            <div class="field">
+              <span class="field-label" id="rate-chart-start-label">开始日期</span>
+              <input type="hidden" id="rate-chart-start" name="rate_chart_start" value="{{ rate_chart_filters.start or '' }}">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="rate-chart-start" data-empty-label="开始">
+                <summary aria-labelledby="rate-chart-start-label"><span class="mode-summary">开始</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not rate_chart_filters.start else 'false' }}">开始</button>
+                  {% for date in dates %}
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if rate_chart_filters.start == date else 'false' }}">{{ date|date_with_weekday }}</button>
+                  {% endfor %}
+                </div>
+              </details>
+            </div>
+            <span class="range-sep">至</span>
+            <div class="field">
+              <span class="field-label" id="rate-chart-end-label">结束日期</span>
+              <input type="hidden" id="rate-chart-end" name="rate_chart_end" value="{{ rate_chart_filters.end or '' }}">
+              <details class="mode-dropdown date-dropdown js-date-dropdown" data-input="rate-chart-end" data-empty-label="结束">
+                <summary aria-labelledby="rate-chart-end-label"><span class="mode-summary">结束</span></summary>
+                <div class="mode-menu date-menu">
+                  <button class="mode-option date-option" type="button" data-value="" aria-selected="{{ 'true' if not rate_chart_filters.end else 'false' }}">结束</button>
+                  {% for date in dates %}
+                    <button class="mode-option date-option" type="button" data-value="{{ date }}" aria-selected="{{ 'true' if rate_chart_filters.end == date else 'false' }}">{{ date|date_with_weekday }}</button>
+                  {% endfor %}
+                </div>
+              </details>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">流转模式</span>
+            <details class="mode-dropdown js-mode-dropdown">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu">
+                {% for mode in modes %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="rate_chart_mode" value="{{ mode }}" {{ "checked" if mode in rate_chart_filters.modes else "" }}>
+                    <span>{{ mode }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
+          <div class="field">
+            <span class="field-label">学部</span>
+            <details class="mode-dropdown js-mode-dropdown" id="rate-chart-xuebu">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu">
+                {% for xuebu in xuebus %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="rate_chart_xuebu" value="{{ xuebu }}" {{ "checked" if xuebu in rate_chart_filters.xuebus else "" }}>
+                    <span>{{ xuebu }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
+          <button class="btn btn-primary" type="submit">查询</button>
+          <a class="btn btn-secondary" href="{{ rate_chart_reset_url }}#rate-trend-card" data-reset="rate-chart">重置</a>
+        </form>
+        <div class="chart-wrap" id="rate-trend-chart" data-points='{{ rate_trend|tojson }}'>
+          <svg class="chart-svg" role="img" aria-labelledby="rate-trend-title" aria-describedby="rate-trend-desc"></svg>
+          <div class="chart-empty" hidden>
+            <div>
+              <strong>暂无可绘制的曲线数据</strong><br>
+              需要先上传包含单量和 AI 接通数的 tongshi 表并生成结果。
+            </div>
+          </div>
+          <span id="rate-trend-desc" hidden>按日期展示接通转化率变化。</span>
+        </div>
+      </section>
+
+      <section class="card" id="filter-card" aria-labelledby="filter-title">
         <div class="section-head">
           <div>
             <h2 class="section-title" id="filter-title">筛选</h2>
           </div>
         </div>
-        <form class="controls js-range-form" action="{{ url_for('index') }}" method="get">
+        <form id="table-form" class="controls js-range-form" action="{{ url_for('index') }}#results" method="get">
           {% for item in table_preserve_args %}
             <input type="hidden" name="{{ item.name }}" value="{{ item.value }}">
           {% endfor %}
@@ -1025,7 +1135,7 @@
             </details>
           </div>
           <button class="btn btn-primary" type="submit">查询</button>
-          <a class="btn btn-secondary" href="{{ table_reset_url }}">重置</a>
+          <a class="btn btn-secondary" href="{{ table_reset_url }}#results" data-reset="table">重置</a>
         </form>
       </section>
 
@@ -1250,32 +1360,33 @@
       broadcastButton.addEventListener("click", markBroadcastRead);
     }
 
-    const chartBox = document.getElementById("trend-chart");
-    const chartSvg = chartBox.querySelector("svg");
-    const chartEmpty = chartBox.querySelector(".chart-empty");
-    const latestTrend = document.getElementById("trend-latest");
-    const points = JSON.parse(chartBox.dataset.points || "[]");
-    let activeTrendTooltip = null;
-
-    const hideTrendTooltip = () => {
-      if (activeTrendTooltip) {
-        activeTrendTooltip.remove();
-        activeTrendTooltip = null;
-      }
-    };
+    const trendTooltipHiders = [];
 
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      if (!target) {
+      if (!target || target.closest(".trend-hit") || target.closest(".trend-tooltip")) {
         return;
       }
-      if (target.closest(".trend-hit") || target.closest(".trend-tooltip")) {
-        return;
-      }
-      hideTrendTooltip();
+      trendTooltipHiders.forEach((hide) => hide());
     });
 
-    function renderTrendChart() {
+    function createTrendRenderer({ chartId, latestId, metricKey, label, formatValue, valueForChart, valueFromChart, minimumPad }) {
+      const chartBox = document.getElementById(chartId);
+      const chartSvg = chartBox.querySelector("svg");
+      const chartEmpty = chartBox.querySelector(".chart-empty");
+      const latestTrend = document.getElementById(latestId);
+      let activeTrendTooltip = null;
+
+      const hideTrendTooltip = () => {
+        if (activeTrendTooltip) {
+          activeTrendTooltip.remove();
+          activeTrendTooltip = null;
+        }
+      };
+      trendTooltipHiders.push(hideTrendTooltip);
+
+      return function renderTrendChart() {
+      const points = JSON.parse(chartBox.dataset.points || "[]");
       const width = chartBox.clientWidth || 800;
       const height = 300;
       const margin = { top: 24, right: 28, bottom: 48, left: 82 };
@@ -1293,10 +1404,10 @@
       chartSvg.hidden = false;
       chartEmpty.hidden = true;
 
-      const values = points.map((item) => Number(item["聚合单例子结算成本"] || 0));
+      const values = points.map((item) => valueForChart(Number(item[metricKey] || 0)));
       const minValue = Math.min(...values);
       const maxValue = Math.max(...values);
-      const pad = Math.max((maxValue - minValue) * 0.14, 1);
+      const pad = Math.max((maxValue - minValue) * 0.14, minimumPad);
       const yMin = Math.max(0, minValue - pad);
       const yMax = maxValue + pad;
       const innerW = width - margin.left - margin.right;
@@ -1311,9 +1422,9 @@
       const showTooltip = (index, px, py) => {
         hideTrendTooltip();
         const item = points[index];
-        const value = Number(item["聚合单例子结算成本"] || 0).toFixed(1);
+        const value = formatValue(Number(item[metricKey] || 0));
         const group = make("g", { class: "trend-tooltip", "data-date": item["日期"], "data-value": value });
-        const boxW = 70;
+        const boxW = Math.max(70, value.length * 9 + 18);
         const boxH = 34;
         const boxX = Math.min(Math.max(px - boxW / 2, margin.left + 4), width - margin.right - boxW - 4);
         const boxY = Math.max(py - boxH - 14, margin.top + 4);
@@ -1327,15 +1438,15 @@
         const value = yMin + ((yMax - yMin) * i) / 4;
         const gy = y(value);
         chartSvg.appendChild(make("line", { class: "grid-line", x1: margin.left, x2: width - margin.right, y1: gy, y2: gy }));
-        chartSvg.appendChild(make("text", { class: "axis-text", x: margin.left - 10, y: gy + 4, "text-anchor": "end" })).textContent = value.toFixed(1);
+        chartSvg.appendChild(make("text", { class: "axis-text", x: margin.left - 10, y: gy + 4, "text-anchor": "end" })).textContent = formatValue(valueFromChart(value));
       }
 
       chartSvg.appendChild(make("line", { class: "axis-line", x1: margin.left, x2: margin.left, y1: margin.top, y2: height - margin.bottom }));
       chartSvg.appendChild(make("line", { class: "axis-line", x1: margin.left, x2: width - margin.right, y1: height - margin.bottom, y2: height - margin.bottom }));
-      chartSvg.appendChild(make("text", { class: "axis-label", x: 20, y: margin.top + innerH / 2, transform: `rotate(-90 20 ${margin.top + innerH / 2})`, "text-anchor": "middle" })).textContent = "单例子结算成本";
+      chartSvg.appendChild(make("text", { class: "axis-label", x: 20, y: margin.top + innerH / 2, transform: `rotate(-90 20 ${margin.top + innerH / 2})`, "text-anchor": "middle" })).textContent = label;
       chartSvg.appendChild(make("text", { class: "axis-label", x: width - margin.right, y: height - 12, "text-anchor": "end" })).textContent = "日期";
 
-      const pathPoints = points.map((item, index) => [x(index), y(Number(item["聚合单例子结算成本"] || 0))]);
+      const pathPoints = points.map((item, index) => [x(index), y(valueForChart(Number(item[metricKey] || 0)))]);
       const linePath = pathPoints.map(([px, py], index) => `${index === 0 ? "M" : "L"} ${px.toFixed(2)} ${py.toFixed(2)}`).join(" ");
       const areaPath = `${linePath} L ${pathPoints[pathPoints.length - 1][0].toFixed(2)} ${height - margin.bottom} L ${pathPoints[0][0].toFixed(2)} ${height - margin.bottom} Z`;
       chartSvg.appendChild(make("path", { class: "trend-area", d: areaPath }));
@@ -1343,13 +1454,13 @@
       const meanValue = values.reduce((s, v) => s + v, 0) / (values.length || 1);
       const meanY = y(meanValue);
       chartSvg.appendChild(make("line", { class: "trend-mean", x1: margin.left, x2: width - margin.right, y1: meanY, y2: meanY }));
-      chartSvg.appendChild(make("text", { class: "trend-mean-label", x: width - margin.right, y: meanY - 6, "text-anchor": "end" })).textContent = "均值 " + meanValue.toFixed(1);
+      chartSvg.appendChild(make("text", { class: "trend-mean-label", x: width - margin.right, y: meanY - 6, "text-anchor": "end" })).textContent = "均值 " + formatValue(valueFromChart(meanValue));
 
       chartSvg.appendChild(make("path", { class: "trend-line", d: linePath }));
 
       pathPoints.forEach(([px, py], index) => {
         chartSvg.appendChild(make("circle", { class: "trend-dot", cx: px, cy: py, r: 4 }));
-        const hit = make("circle", { class: "trend-hit", cx: px, cy: py, r: 14, tabindex: "0", role: "button", "aria-label": `${points[index]["日期"]} 单例子结算成本 ${Number(points[index]["聚合单例子结算成本"] || 0).toFixed(1)}` });
+        const hit = make("circle", { class: "trend-hit", cx: px, cy: py, r: 14, tabindex: "0", role: "button", "aria-label": `${points[index]["日期"]} ${label} ${formatValue(Number(points[index][metricKey] || 0))}` });
         hit.addEventListener("click", () => showTooltip(index, px, py));
         hit.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -1364,11 +1475,37 @@
       });
 
       const latest = points[points.length - 1];
-      latestTrend.textContent = Number(latest["聚合单例子结算成本"]).toFixed(1);
+      latestTrend.textContent = formatValue(Number(latest[metricKey] || 0));
+      };
     }
 
+    const renderTrendChart = createTrendRenderer({
+      chartId: "trend-chart",
+      latestId: "trend-latest",
+      metricKey: "聚合单例子结算成本",
+      label: "单例子结算成本",
+      formatValue: (value) => value.toFixed(1),
+      valueForChart: (value) => value,
+      valueFromChart: (value) => value,
+      minimumPad: 1,
+    });
+    const renderRateTrendChart = createTrendRenderer({
+      chartId: "rate-trend-chart",
+      latestId: "rate-trend-latest",
+      metricKey: "聚合接通转化率",
+      label: "接通转化率",
+      formatValue: (value) => `${(value * 100).toFixed(1)}%`,
+      valueForChart: (value) => value * 100,
+      valueFromChart: (value) => value / 100,
+      minimumPad: 0.5,
+    });
+
+    window.renderTrendChart = renderTrendChart;
+    window.renderRateTrendChart = renderRateTrendChart;
     renderTrendChart();
+    renderRateTrendChart();
     window.addEventListener("resize", renderTrendChart);
+    window.addEventListener("resize", renderRateTrendChart);
   </script>
 </body>
 </html>

@@ -17,6 +17,7 @@ from pipeline import (
     compute_result,
     distinct_dates,
     distinct_modes,
+    fetch_conversion_rate_trend,
     fetch_cost_trend,
     fetch_filtered,
     generate_result_xlsx,
@@ -218,8 +219,11 @@ def _default_filters(include_xuebu: bool = False, view: str = "7d") -> dict[str,
     return filters
 
 
-def _url_with_filters(chart_filters: dict[str, object], table_filters: dict[str, object]) -> str:
-    return url_for("index") + "?" + urlencode(_prefixed_args("chart", chart_filters) + _prefixed_args("table", table_filters))
+def _url_with_filters(*filter_groups: tuple[str, dict[str, object]]) -> str:
+    args: list[tuple[str, object]] = []
+    for prefix, filters in filter_groups:
+        args.extend(_prefixed_args(prefix, filters))
+    return url_for("index") + "?" + urlencode(args)
 
 
 def _template_preserve_args(prefix: str, filters: dict[str, object]) -> list[dict[str, object]]:
@@ -511,7 +515,8 @@ def _recalculate_fixed_data() -> tuple[bool, str]:
 
 @app.route("/", methods=["GET"])
 def index():
-    chart_filters = _filters_from_request("chart", default_view="7d")
+    chart_filters = _filters_from_request("chart", include_xuebu=True, default_view="7d")
+    rate_chart_filters = _filters_from_request("rate_chart", include_xuebu=True, default_view="7d")
     table_filters = _filters_from_request("table", include_xuebu=True, default_view="latest")
     all_modes = distinct_modes()
     current_latest_date = latest_date()
@@ -528,6 +533,14 @@ def index():
         start=chart_filters["start"],
         end=chart_filters["end"],
         mode=chart_filters["modes"],
+        xuebu=chart_filters["xuebus"],
+    )
+    rate_trend = fetch_conversion_rate_trend(
+        view=str(rate_chart_filters["view"]),
+        start=rate_chart_filters["start"],
+        end=rate_chart_filters["end"],
+        mode=rate_chart_filters["modes"],
+        xuebu=rate_chart_filters["xuebus"],
     )
     formatted_rows = []
     for row in rows:
@@ -552,14 +565,18 @@ def index():
         latest_date=current_latest_date,
         daily_broadcast=_daily_broadcast(current_latest_date, all_modes),
         chart_filters=chart_filters,
+        rate_chart_filters=rate_chart_filters,
         table_filters=table_filters,
-        chart_preserve_args=_template_preserve_args("table", table_filters),
-        table_preserve_args=_template_preserve_args("chart", chart_filters),
+        chart_preserve_args=_template_preserve_args("rate_chart", rate_chart_filters) + _template_preserve_args("table", table_filters),
+        rate_chart_preserve_args=_template_preserve_args("chart", chart_filters) + _template_preserve_args("table", table_filters),
+        table_preserve_args=_template_preserve_args("chart", chart_filters) + _template_preserve_args("rate_chart", rate_chart_filters),
         trend=trend,
+        rate_trend=rate_trend,
         view_label=_view_label(table_filters),
         download_url=_download_url(table_filters),
-        chart_reset_url=_url_with_filters(_default_filters(), table_filters),
-        table_reset_url=_url_with_filters(chart_filters, _default_filters(include_xuebu=True, view="latest")),
+        chart_reset_url=_url_with_filters(("chart", _default_filters(include_xuebu=True)), ("rate_chart", rate_chart_filters), ("table", table_filters)),
+        rate_chart_reset_url=_url_with_filters(("chart", chart_filters), ("rate_chart", _default_filters(include_xuebu=True)), ("table", table_filters)),
+        table_reset_url=_url_with_filters(("chart", chart_filters), ("rate_chart", rate_chart_filters), ("table", _default_filters(include_xuebu=True, view="latest"))),
         status=status,
     )
 
