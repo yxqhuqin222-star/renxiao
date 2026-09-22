@@ -887,7 +887,7 @@
             <b id="trend-latest">-</b>
           </div>
         </div>
-<form id="chart-form" class="controls chart-controls js-range-form" method="get" onsubmit="return false">
+<form id="chart-form" class="controls chart-controls js-range-form" method="get" data-scroll-target="cost-trend-card" data-static-readonly="true" onsubmit="return false">
 
             <input type="hidden" name="rate_chart_view" value="7d">
 
@@ -1345,7 +1345,7 @@
             <b id="rate-trend-latest">-</b>
           </div>
         </div>
-        <form id="rate-chart-form" class="controls chart-controls rate-chart-controls js-range-form" method="get" onsubmit="return false">
+        <form id="rate-chart-form" class="controls chart-controls rate-chart-controls js-range-form" method="get" data-scroll-target="rate-trend-card" data-static-readonly="true" onsubmit="return false">
 
             <input type="hidden" name="chart_view" value="7d">
 
@@ -1799,7 +1799,7 @@
             <h2 class="section-title" id="filter-title">筛选</h2>
           </div>
         </div>
-        <form id="table-form" class="controls js-range-form" method="get" onsubmit="return false">
+        <form id="table-form" class="controls js-range-form" method="get" data-scroll-target="results" data-static-readonly="true" onsubmit="return false">
 
             <input type="hidden" name="chart_view" value="7d">
 
@@ -2358,6 +2358,19 @@
           });
           customRange.classList.toggle("is-visible", button.dataset.view === "custom");
         });
+      });
+    });
+
+    document.querySelectorAll(".js-range-form[data-scroll-target]").forEach((form) => {
+      if (form.dataset.staticReadonly === "true") {
+        return;
+      }
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const destination = new URL(form.action, window.location.href);
+        destination.search = new URLSearchParams(new FormData(form)).toString();
+        destination.hash = form.dataset.scrollTarget;
+        window.location.assign(destination.toString());
       });
     });
 

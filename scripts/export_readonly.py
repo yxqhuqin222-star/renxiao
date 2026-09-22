@@ -400,8 +400,8 @@ def _remove_download(html: str) -> str:
 def _relabel_forms(html: str) -> str:
     for form_id in ("chart-form", "rate-chart-form", "table-form"):
         html = re.sub(
-            rf'(<form id="{form_id}"[^>]*) action="/(?:#[^"]*)?" method="get">',
-            r'\1 method="get" onsubmit="return false">',
+            rf'(<form id="{form_id}"[^>]*) action="/(?:#[^"]*)?" method="get"([^>]*)>',
+            r'\1 method="get"\2 data-static-readonly="true" onsubmit="return false">',
             html,
         )
     return html
