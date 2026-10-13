@@ -1,8 +1,12 @@
 import unittest
 import subprocess
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
+from config import settings as S
 from app import (
+    _announcements,
     _date_with_weekday,
     _daily_broadcast,
     _github_publish_blocker,
@@ -16,6 +20,43 @@ from app import (
 
 
 class TestAppAggregates(unittest.TestCase):
+    def test_announcement_crud_and_readonly_view(self):
+        with tempfile.TemporaryDirectory() as temp_dir, patch.object(S, "DB_PATH", Path(temp_dir) / "dashboard.db"), patch.object(
+            S, "SEED_DB_PATH", Path(temp_dir) / "no-seed.db"
+        ):
+            client = app.test_client()
+            response = client.post("/announcements/save", data={"record": "第一条公告"})
+            self.assertEqual(302, response.status_code)
+            item = _announcements()[0]
+            self.assertEqual("第一条公告", item["record"])
+            self.assertEqual(1, item["revision"])
+
+            response = client.post("/announcements/save", data={"announcement_id": item["id"], "record": "修改后的公告"})
+            self.assertEqual(302, response.status_code)
+            updated = _announcements()[0]
+            self.assertEqual("修改后的公告", updated["record"])
+            self.assertEqual(2, updated["revision"])
+            self.assertGreater(updated["updated_at"], item["updated_at"])
+
+            public_html = client.get("/?readonly=1").get_data(as_text=True)
+            self.assertIn("修改后的公告", public_html)
+            self.assertNotIn('class="announcement-add"', public_html)
+            self.assertNotIn('class="announcement-edit-form"', public_html)
+            self.assertNotIn('href="/admin"', public_html)
+            self.assertNotIn('action="/upload"', public_html)
+
+            response = client.post("/announcements/delete", data={"announcement_id": item["id"]})
+            self.assertEqual(302, response.status_code)
+            self.assertEqual([], _announcements())
+
+    def test_announcement_rejects_blank_record(self):
+        with tempfile.TemporaryDirectory() as temp_dir, patch.object(S, "DB_PATH", Path(temp_dir) / "dashboard.db"), patch.object(
+            S, "SEED_DB_PATH", Path(temp_dir) / "no-seed.db"
+        ):
+            response = app.test_client().post("/announcements/save", data={"record": "  "})
+            self.assertEqual(302, response.status_code)
+            self.assertEqual([], _announcements())
+
     def test_page_omits_top_kpi_strip(self):
         response = app.test_client().get("/")
         html = response.get_data(as_text=True)

@@ -304,182 +304,42 @@
     .btn-primary:hover { background: var(--primary-hover); }
     .btn-secondary { background: #fff; color: var(--ink-muted); border-color: var(--line-strong); }
     .btn-secondary:hover { color: var(--ink); border-color: var(--ink-soft); }
-    .broadcast-button {
-      position: relative;
-      width: 42px;
-      padding: 0;
-      color: var(--primary);
-      background: var(--primary-soft);
-      border-color: transparent;
-      box-shadow: 0 6px 18px rgba(49, 92, 246, .12);
-    }
-    .broadcast-button::after {
-      position: absolute;
-      inset: -5px;
-      content: "";
-      border-radius: calc(var(--radius-sm) + 5px);
-      background: rgba(49, 92, 246, .14);
-      opacity: 0;
-      transform: scale(.78);
-      pointer-events: none;
-    }
-    .broadcast-button-text { display: none; }
-    .broadcast-button:hover {
-      color: #fff;
-      background: var(--primary);
-      box-shadow: 0 8px 22px rgba(49, 92, 246, .20);
-    }
-    .broadcast-button[aria-expanded="true"] {
-      color: #fff;
-      background: var(--primary);
-    }
-    .broadcast-button.is-unread::after {
-      animation: broadcastPulse 1.8s ease-out infinite;
-    }
-    .broadcast-button.is-unread svg {
-      transform-origin: 45% 50%;
-      animation: broadcastBell 1.8s ease-in-out infinite;
-    }
-    @keyframes broadcastPulse {
-      0%, 100% {
-        opacity: 0;
-        transform: scale(.78);
-      }
-      42% {
-        opacity: 1;
-        transform: scale(1.12);
-      }
-    }
-    @keyframes broadcastBell {
-      0%, 45%, 100% { transform: rotate(0deg); }
-      10% { transform: rotate(-9deg); }
-      20% { transform: rotate(8deg); }
-      30% { transform: rotate(-5deg); }
-    }
-    .broadcast-panel {
-      margin: -6px 0 16px;
-      padding: 18px;
-      border: 1px solid #dce4ff;
-      border-radius: var(--radius-lg);
-      background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
-      box-shadow: 0 12px 30px rgba(49, 92, 246, .08);
-    }
-    .broadcast-panel[hidden] { display: none; }
-    .broadcast-head {
-      display: flex;
-      align-items: start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 14px;
-    }
-    .broadcast-title {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 780;
-    }
-    .broadcast-meta {
-      margin-top: 4px;
-      color: var(--ink-muted);
-      font-size: 12.5px;
-      font-variant-numeric: tabular-nums;
-    }
-    .broadcast-summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .broadcast-stat {
-      padding: 11px 12px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-md);
-      background: #fff;
-    }
-    .broadcast-stat span {
-      display: block;
-      color: var(--ink-muted);
-      font-size: 12px;
-      font-weight: 680;
-    }
-    .broadcast-stat b {
-      display: block;
-      margin-top: 2px;
-      color: var(--ink);
-      font-size: 18px;
-      line-height: 1.25;
-      font-variant-numeric: tabular-nums;
-    }
-    .broadcast-groups {
-      display: grid;
-      gap: 12px;
-    }
-    .broadcast-group {
-      border: 1px solid var(--line);
-      border-radius: var(--radius-md);
-      background: #fff;
-      overflow: hidden;
-    }
-    .broadcast-group-title {
-      margin: 0;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--line);
-      background: var(--surface-soft);
-      font-size: 13px;
-      font-weight: 760;
-    }
-    .broadcast-table-wrap { overflow: auto; }
-    .broadcast-table {
-      min-width: 720px;
-      font-size: 13px;
-    }
-    .broadcast-table th,
-    .broadcast-table td {
-      padding: 9px 10px;
-    }
-    .broadcast-table thead th {
-      background: var(--surface-soft);
-      white-space: nowrap;
-    }
-    .broadcast-table .metric-group {
-      border-bottom: 1px solid var(--line);
-      font-size: 12px;
-      font-weight: 760;
-      letter-spacing: 0.01em;
-      text-align: center;
-    }
-    .broadcast-table .metric-group--line {
-      background: #f8fafc;
-      color: #334155;
-    }
-    .broadcast-table .metric-group--case {
-      background: #fff7ed;
-      color: #9a3412;
-    }
-    .broadcast-table .metric-subhead {
-      font-size: 12px;
-      color: var(--ink-muted);
-      font-weight: 680;
-    }
-    .broadcast-table .metric-cell--line {
-      background: rgba(248, 250, 252, 0.58);
-    }
-    .broadcast-table .metric-cell--case {
-      background: rgba(255, 247, 237, 0.54);
-    }
-    .broadcast-table .metric-split {
-      border-left: 1px solid var(--line);
-    }
-    .delta-up { color: var(--danger); }
-    .delta-down { color: var(--success); }
-    @media (prefers-reduced-motion: reduce) {
-      .broadcast-button.is-unread::after,
-      .broadcast-button.is-unread svg {
-        animation: none;
-      }
-      .broadcast-button.is-unread::after {
-        opacity: 1;
-        transform: scale(1);
-      }
+    .announcement-toggle { gap: 8px; color: var(--primary); background: var(--primary-soft); }
+    .announcement-toggle[aria-expanded="true"] { color: #fff; background: var(--primary); }
+    .announcement-badge { display: inline-grid; place-items: center; min-width: 21px; height: 21px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .announcement-badge[hidden] { display: none; }
+    .announcement-panel { margin: -6px 0 16px; padding: 22px; border: 1px solid var(--line-strong); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow); }
+    .announcement-panel[hidden], .announcement-edit-form[hidden], .announcement-view[hidden] { display: none; }
+    .announcement-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .announcement-head h2 { margin: 0; font-size: 18px; }
+    .announcement-body { max-width: 980px; margin: auto; padding-top: 20px; }
+    .announcement-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+    .announcement-field { display: grid; gap: 7px; min-width: 0; color: var(--ink-muted); font-size: 13px; font-weight: 700; }
+    .announcement-add textarea, .announcement-edit-form textarea { width: 100%; min-height: 72px; padding: 11px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: #fff; color: var(--ink); font: inherit; resize: vertical; }
+    .announcement-add textarea:focus-visible, .announcement-edit-form textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .announcement-time-hint { margin: 8px 0 18px; color: var(--ink-soft); font-size: 12px; }
+    .announcement-list { border-top: 1px solid var(--line); }
+    .announcement-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 20px; padding: 17px 0; border-bottom: 1px solid var(--line); }
+    .announcement-record { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+    .announcement-aside { display: grid; justify-items: end; gap: 7px; white-space: nowrap; }
+    .announcement-aside time { color: var(--ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .announcement-actions { display: flex; gap: 14px; }
+    .announcement-actions form { margin: 0; }
+    .announcement-text-button { padding: 2px 0; border: 0; background: none; color: var(--primary); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .announcement-text-button.danger { color: var(--danger); }
+    .announcement-edit-form { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+    .announcement-edit-form textarea { min-height: 90px; }
+    .announcement-edit-actions { display: flex; gap: 12px; padding-bottom: 6px; }
+    .announcement-empty { padding: 24px 0; color: var(--ink-muted); }
+    @media (max-width: 560px) {
+      .announcement-panel { padding: 18px; }
+      .announcement-head .btn { width: auto; flex: none; }
+      .announcement-add, .announcement-edit-form { grid-template-columns: 1fr; }
+      .announcement-add .btn { justify-self: end; width: auto; }
+      .announcement-item { gap: 10px; }
+      .announcement-aside time { font-size: 11px; }
+      .announcement-actions { gap: 10px; }
+      .announcement-edit-actions { justify-content: flex-end; }
     }
     .chart-card { padding-bottom: 22px; }
     .chart-head {
@@ -699,9 +559,6 @@
       .chart-head { align-items: stretch; flex-direction: column; }
       .chart-stat { text-align: left; }
       .topbar-actions { align-items: stretch; flex-direction: column-reverse; }
-      .broadcast-button { width: 100%; }
-      .broadcast-button-text { display: inline; }
-      .broadcast-head { flex-direction: column; }
       .controls { align-items: stretch; }
       .table-actions { justify-content: stretch; }
       .result-summary { grid-template-columns: 1fr; }
@@ -739,13 +596,14 @@
         <h1>人效、成本监控</h1>
       </div>
       <div class="topbar-actions">
+        {% if not readonly %}
         <a class="btn btn-secondary" href="{{ url_for('admin') }}">管理人力成本</a>
         <form action="{{ url_for('upload') }}" method="post">
           <button class="btn btn-primary" type="submit">上传并更新</button>
         </form>
-        <button class="btn broadcast-button js-panel-toggle js-broadcast-button" type="button" aria-expanded="false" aria-controls="daily-broadcast" aria-label="查看每日播报" data-broadcast-date="{{ daily_broadcast.latest_date or '' }}">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l6 5V5l-6 5H4Z"/><path d="M18 9a4 4 0 0 1 0 6"/><path d="M20.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>
-          <span class="broadcast-button-text">每日播报</span>
+        {% endif %}
+        <button class="btn announcement-toggle" id="announcement-toggle" type="button" aria-expanded="false" aria-controls="announcements" aria-label="查看公告">
+          公告 <span class="announcement-badge" id="announcement-badge" hidden></span>
         </button>
         <div class="latest-badge">最新：{{ latest_date or "暂无数据" }}</div>
       </div>
@@ -755,67 +613,54 @@
       <div class="status" role="status">{{ status }}</div>
     {% endif %}
 
-    <section class="broadcast-panel" id="daily-broadcast" aria-labelledby="daily-broadcast-title" hidden>
-      <div class="broadcast-head">
-        <div>
-          <h2 class="broadcast-title" id="daily-broadcast-title">每日播报｜{{ daily_broadcast.date_label }}</h2>
-          <div class="broadcast-meta">
-            最新数据：{{ daily_broadcast.latest_date or "暂无" }}；
-            昨日：{{ daily_broadcast.yesterday or "-" }}；
-            上周同日：{{ daily_broadcast.last_week or "-" }}
-          </div>
-        </div>
+    <section class="announcement-panel" id="announcements" aria-labelledby="announcements-title" data-auto-open="{{ 'true' if announcement_open else 'false' }}" hidden>
+      <div class="announcement-head">
+        <h2 id="announcements-title">重要信息通知</h2>
+        <button class="btn btn-secondary" id="announcement-close" type="button">收起公告</button>
       </div>
-      <div class="broadcast-summary" aria-label="今日核心指标">
-        <div class="broadcast-stat"><span>数据行数</span><b>{{ daily_broadcast.row_count }}</b></div>
-        <div class="broadcast-stat"><span>单量</span><b>{{ daily_broadcast.overview.total_examples }}</b></div>
-        <div class="broadcast-stat"><span>人效</span><b>{{ daily_broadcast.overview.efficiency }}</b></div>
-        <div class="broadcast-stat"><span>线路成本</span><b>{{ daily_broadcast.overview.line_cost }}</b></div>
-        <div class="broadcast-stat"><span>单例子结算成本</span><b>{{ daily_broadcast.overview.case_cost }}</b></div>
-        <div class="broadcast-stat"><span>接通转化率</span><b>{{ daily_broadcast.overview.rate }}</b></div>
-      </div>
-      <div class="broadcast-groups">
-        {% for group in daily_broadcast.groups %}
-          <div class="broadcast-group">
-            <h3 class="broadcast-group-title">{{ group.xuebu }}</h3>
-            {% if group.rows %}
-              <div class="broadcast-table-wrap">
-                <table class="broadcast-table">
-                  <thead>
-                    <tr>
-                      <th rowspan="2">流转模式</th>
-                      <th class="metric-group metric-group--line" colspan="3">线路成本考察</th>
-                      <th class="metric-group metric-group--case metric-split" colspan="3">单例子结算成本考察</th>
-                    </tr>
-                    <tr>
-                      <th class="metric-subhead">当前</th>
-                      <th class="metric-subhead">较昨日</th>
-                      <th class="metric-subhead">较上周同日</th>
-                      <th class="metric-subhead metric-split">当前</th>
-                      <th class="metric-subhead">较昨日</th>
-                      <th class="metric-subhead">较上周同日</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for row in group.rows %}
-                      <tr>
-                        <td><span class="pill mode">{{ row.mode }}</span></td>
-                        <td class="num metric-cell--line">{{ row.line_cost }}</td>
-                        <td class="num metric-cell--line {{ 'delta-down' if row.line_vs_yesterday.startswith('-') else 'delta-up' if row.line_vs_yesterday.startswith('+') else '' }}">{{ row.line_vs_yesterday }}</td>
-                        <td class="num metric-cell--line {{ 'delta-down' if row.line_vs_last_week.startswith('-') else 'delta-up' if row.line_vs_last_week.startswith('+') else '' }}">{{ row.line_vs_last_week }}</td>
-                        <td class="num metric-cell--case metric-split">{{ row.case_cost }}</td>
-                        <td class="num metric-cell--case {{ 'delta-down' if row.case_vs_yesterday.startswith('-') else 'delta-up' if row.case_vs_yesterday.startswith('+') else '' }}">{{ row.case_vs_yesterday }}</td>
-                        <td class="num metric-cell--case {{ 'delta-down' if row.case_vs_last_week.startswith('-') else 'delta-up' if row.case_vs_last_week.startswith('+') else '' }}">{{ row.case_vs_last_week }}</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+      <div class="announcement-body">
+        {% if not readonly %}
+        <form class="announcement-add" action="{{ url_for('save_announcement') }}" method="post">
+          <label class="announcement-field" for="new-announcement">新增记录
+            <textarea id="new-announcement" name="record" maxlength="5000" placeholder="输入需要通知的重要信息" required></textarea>
+          </label>
+          <button class="btn btn-primary" type="submit">发布公告</button>
+        </form>
+        <p class="announcement-time-hint">时间会在新增或保存修改时自动更新。</p>
+        {% endif %}
+        <div class="announcement-list" id="announcement-list">
+          {% for item in announcements %}
+          <article class="announcement-item" data-id="{{ item.id }}" data-revision="{{ item.revision }}">
+            <div class="announcement-view">
+              <p class="announcement-record">{{ item.record }}</p>
+            </div>
+            <div class="announcement-aside announcement-view">
+              <time datetime="{{ item.updated_at }}">{{ item.updated_at[:16].replace('T', ' ') }}</time>
+              {% if not readonly %}
+              <div class="announcement-actions">
+                <button class="announcement-text-button js-announcement-edit" type="button">编辑</button>
+                <form action="{{ url_for('delete_announcement') }}" method="post" onsubmit="return confirm('删除这条公告？删除后将不再显示。')">
+                  <input type="hidden" name="announcement_id" value="{{ item.id }}">
+                  <button class="announcement-text-button danger" type="submit">删除</button>
+                </form>
               </div>
-            {% else %}
-              <div class="empty">今日暂无{{ group.xuebu }}数据。</div>
+              {% endif %}
+            </div>
+            {% if not readonly %}
+            <form class="announcement-edit-form" action="{{ url_for('save_announcement') }}" method="post" hidden>
+              <input type="hidden" name="announcement_id" value="{{ item.id }}">
+              <textarea name="record" aria-label="修改公告记录" maxlength="5000" required>{{ item.record }}</textarea>
+              <div class="announcement-edit-actions">
+                <button class="announcement-text-button" type="submit">保存修改</button>
+                <button class="announcement-text-button js-announcement-cancel" type="button">取消</button>
+              </div>
+            </form>
             {% endif %}
-          </div>
-        {% endfor %}
+          </article>
+          {% else %}
+          <div class="announcement-empty">暂无公告。{% if not readonly %}可在上方新增记录。{% endif %}</div>
+          {% endfor %}
+        </div>
       </div>
     </section>
 
@@ -1328,37 +1173,76 @@
       });
     });
 
-    const broadcastButton = document.querySelector(".js-broadcast-button");
-    if (broadcastButton) {
-      const broadcastDate = broadcastButton.dataset.broadcastDate;
-      const storageKey = broadcastDate ? `renxiao-daily-broadcast-read:${broadcastDate}` : "";
-      const broadcastPanel = document.getElementById(broadcastButton.getAttribute("aria-controls"));
-      const refreshBroadcastLabel = () => {
-        const isOpen = broadcastPanel && !broadcastPanel.hidden;
-        const isUnread = broadcastButton.classList.contains("is-unread");
-        broadcastButton.setAttribute("aria-label", isOpen ? "收起每日播报" : isUnread ? "查看每日播报，有未读更新" : "查看每日播报");
-      };
-      const markBroadcastRead = () => {
-        broadcastButton.classList.remove("is-unread");
-        if (storageKey) {
-          try {
-            localStorage.setItem(storageKey, "1");
-          } catch (error) {}
-        }
-        refreshBroadcastLabel();
-      };
-      if (storageKey) {
-        let hasRead = false;
-        try {
-          hasRead = localStorage.getItem(storageKey) === "1";
-        } catch (error) {}
-        if (!hasRead) {
-          broadcastButton.classList.add("is-unread");
-        }
+    const announcementToggle = document.getElementById("announcement-toggle");
+    const announcementPanel = document.getElementById("announcements");
+    const announcementBadge = document.getElementById("announcement-badge");
+    const announcementItems = Array.from(document.querySelectorAll(".announcement-item"));
+    const announcementStorageKey = "renxiao-announcement-seen-v1";
+    let seenAnnouncements = {};
+    try {
+      const stored = JSON.parse(localStorage.getItem(announcementStorageKey) || "{}");
+      if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+        seenAnnouncements = stored;
       }
-      refreshBroadcastLabel();
-      broadcastButton.addEventListener("click", markBroadcastRead);
+    } catch (error) {
+      seenAnnouncements = {};
     }
+
+    const refreshAnnouncementBadge = () => {
+      const unread = announcementItems.filter((item) =>
+        String(seenAnnouncements[item.dataset.id] || "") !== item.dataset.revision
+      ).length;
+      announcementBadge.hidden = unread === 0;
+      announcementBadge.textContent = unread > 99 ? "99+" : String(unread);
+      announcementToggle.setAttribute(
+        "aria-label",
+        unread ? `查看公告，有 ${unread} 条更新` : "查看公告"
+      );
+    };
+    const markAnnouncementsRead = () => {
+      announcementItems.forEach((item) => {
+        seenAnnouncements[item.dataset.id] = item.dataset.revision;
+      });
+      try {
+        localStorage.setItem(announcementStorageKey, JSON.stringify(seenAnnouncements));
+      } catch (error) {
+        // Keep the current page state usable if browser storage is unavailable.
+      }
+      refreshAnnouncementBadge();
+    };
+    const setAnnouncementsOpen = (open) => {
+      announcementPanel.hidden = !open;
+      announcementToggle.setAttribute("aria-expanded", String(open));
+      if (open) markAnnouncementsRead();
+      announcementToggle.setAttribute("aria-label", open ? "收起公告" : "查看公告");
+    };
+    refreshAnnouncementBadge();
+    announcementToggle.addEventListener("click", () => setAnnouncementsOpen(announcementPanel.hidden));
+    document.getElementById("announcement-close").addEventListener("click", () => {
+      setAnnouncementsOpen(false);
+      announcementToggle.focus();
+    });
+    if (announcementPanel.dataset.autoOpen === "true") {
+      setAnnouncementsOpen(true);
+      announcementPanel.scrollIntoView({ block: "start" });
+    }
+
+    document.getElementById("announcement-list").addEventListener("click", (event) => {
+      const item = event.target.closest(".announcement-item");
+      if (!item) return;
+      if (event.target.closest(".js-announcement-edit")) {
+        item.querySelectorAll(".announcement-view").forEach((view) => { view.hidden = true; });
+        const form = item.querySelector(".announcement-edit-form");
+        form.hidden = false;
+        form.querySelector("textarea").focus();
+      } else if (event.target.closest(".js-announcement-cancel")) {
+        const form = item.querySelector(".announcement-edit-form");
+        form.hidden = true;
+        form.querySelector("textarea").value = item.querySelector(".announcement-record").textContent;
+        item.querySelectorAll(".announcement-view").forEach((view) => { view.hidden = false; });
+        item.querySelector(".js-announcement-edit").focus();
+      }
+    });
 
     const trendTooltipHiders = [];
 

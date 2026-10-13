@@ -412,7 +412,7 @@ def transform(html: str) -> str:
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     with app.test_client() as client:
-        response = client.get("/?table_view=latest&chart_view=7d")
+        response = client.get("/?readonly=1&table_view=latest&chart_view=7d")
         if response.status_code != 200:
             raise SystemExit(f"GET / failed: {response.status_code}")
         html = response.get_data(as_text=True)

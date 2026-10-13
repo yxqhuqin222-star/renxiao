@@ -6,9 +6,11 @@ import shutil
 import socket
 import subprocess
 import sys
+from contextlib import closing
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse, urlencode
+from zoneinfo import ZoneInfo
 
 from flask import Flask, abort, redirect, render_template, request, send_file, send_from_directory, url_for
 
@@ -21,6 +23,7 @@ from pipeline import (
     fetch_cost_trend,
     fetch_filtered,
     generate_result_xlsx,
+    init_db,
     latest_date,
     delete_labor_cost_rule,
     load_labor_cost_rules,
@@ -36,6 +39,7 @@ app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 PROJECT_DIR = Path(__file__).resolve().parent
 PUBLIC_PAGES_URL = "https://yxqhuqin222-star.github.io/renxiao/"
 DEFAULT_GITHUB_PROXY = "http://127.0.0.1:21081"
+ANNOUNCEMENT_MAX_LENGTH = 5000
 
 FAVICON_FILES = {
     "android-chrome-192x192.png",
@@ -138,6 +142,21 @@ def _python_executable() -> str:
     if Path(sys.executable).exists():
         return sys.executable
     return shutil.which("python3") or shutil.which("python") or sys.executable
+
+
+def _announcement_now() -> str:
+    return datetime.now(ZoneInfo("Asia/Shanghai")).isoformat(timespec="microseconds")
+
+
+def _announcements() -> list[dict[str, object]]:
+    init_db()
+    with closing(sqlite3.connect(S.DB_PATH)) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT id, record, created_at, updated_at, revision "
+            "FROM announcement ORDER BY updated_at DESC, id DESC"
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def _run_publish_step(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
@@ -563,7 +582,9 @@ def index():
         modes=all_modes,
         xuebus=S.XUBU_WHITELIST,
         latest_date=current_latest_date,
-        daily_broadcast=_daily_broadcast(current_latest_date, all_modes),
+        announcements=_announcements(),
+        readonly=request.args.get("readonly") == "1",
+        announcement_open=request.args.get("announcement_open") == "1",
         chart_filters=chart_filters,
         rate_chart_filters=rate_chart_filters,
         table_filters=table_filters,
@@ -579,6 +600,53 @@ def index():
         table_reset_url=_url_with_filters(("chart", chart_filters), ("rate_chart", rate_chart_filters), ("table", _default_filters(include_xuebu=True, view="latest"))),
         status=status,
     )
+
+
+@app.route("/announcements/save", methods=["POST"])
+def save_announcement():
+    record = (request.form.get("record") or "").strip()
+    announcement_id = (request.form.get("announcement_id") or "").strip()
+    if not record or len(record) > ANNOUNCEMENT_MAX_LENGTH:
+        return redirect(url_for("index", status=f"公告记录需填写，且不能超过 {ANNOUNCEMENT_MAX_LENGTH} 字。", announcement_open=1))
+    try:
+        row_id = int(announcement_id) if announcement_id else None
+        if row_id is not None and row_id <= 0:
+            raise ValueError
+    except ValueError:
+        return redirect(url_for("index", status="公告编号无效。", announcement_open=1))
+    init_db()
+    now = _announcement_now()
+    with closing(sqlite3.connect(S.DB_PATH)) as conn:
+        with conn:
+            if row_id is None:
+                conn.execute(
+                    "INSERT INTO announcement(record, created_at, updated_at) VALUES(?,?,?)",
+                    (record, now, now),
+                )
+                status = "公告已发布。"
+            else:
+                result = conn.execute(
+                    "UPDATE announcement SET record=?, updated_at=?, revision=revision+1 WHERE id=?",
+                    (record, now, row_id),
+                )
+                status = "公告已更新。" if result.rowcount else "公告不存在或已删除。"
+    return redirect(url_for("index", status=status, announcement_open=1))
+
+
+@app.route("/announcements/delete", methods=["POST"])
+def delete_announcement():
+    try:
+        row_id = int(request.form.get("announcement_id", ""))
+        if row_id <= 0:
+            raise ValueError
+    except ValueError:
+        return redirect(url_for("index", status="公告编号无效。", announcement_open=1))
+    init_db()
+    with closing(sqlite3.connect(S.DB_PATH)) as conn:
+        with conn:
+            result = conn.execute("DELETE FROM announcement WHERE id=?", (row_id,))
+    status = "公告已删除。" if result.rowcount else "公告不存在或已删除。"
+    return redirect(url_for("index", status=status, announcement_open=1))
 
 
 @app.route("/admin", methods=["GET"])

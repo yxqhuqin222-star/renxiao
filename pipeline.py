@@ -274,6 +274,14 @@ def init_db() -> None:
             生效日期 TEXT NOT NULL,
             UNIQUE(流转模式, 生效日期))"""
     )
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS announcement(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            record TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 1)"""
+    )
     if conn.execute("SELECT COUNT(*) FROM labor_cost_rule").fetchone()[0] == 0:
         conn.executemany(
             "INSERT INTO labor_cost_rule(流转模式, 人力成本, 生效日期) VALUES(?,?,?)",
