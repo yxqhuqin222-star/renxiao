@@ -169,7 +169,12 @@ def labor_cost(mode: str, efficiency: float, day: str | None = None, rules: list
     if mode in S.LABOR_COST_RULES:
         return S.LABOR_COST_RULES[mode]
     if mode == "大神" and efficiency:
-        return S.DSHEN_LABOR_NUMERATOR / efficiency + S.DSHEN_LABOR_EXTRA
+        numerator = (
+            S.DSHEN_OCTOBER_2026_LABOR_NUMERATOR
+            if day and "2026-10-01" <= day < "2026-11-01"
+            else S.DSHEN_LABOR_NUMERATOR
+        )
+        return numerator / efficiency + S.DSHEN_LABOR_EXTRA
     return None
 
 

@@ -9,6 +9,20 @@ from config import settings as S
 
 
 class TestPipeline(unittest.TestCase):
+    def test_dashen_labor_cost_uses_october_2026_numerator_only_in_october(self):
+        for day, numerator in (
+            ("2026-09-30", 395),
+            ("2026-10-01", 476),
+            ("2026-10-31", 476),
+            ("2026-11-01", 395),
+            ("2025-10-15", 395),
+        ):
+            with self.subTest(day=day):
+                self.assertAlmostEqual(
+                    numerator / 4 + 7,
+                    pipeline.labor_cost("大神", 4, day, rules=[]),
+                )
+
     def test_normalize_date_accepts_common_input_formats(self):
         self.assertEqual("2026-08-19", pipeline.normalize_date("2026-08-19"))
         self.assertEqual("2026-08-19", pipeline.normalize_date("20260819"))
