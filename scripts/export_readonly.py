@@ -79,7 +79,7 @@ CLIENT_JS = r"""
   function datePredicate(view, start, end) {
     if (view === 'all') return function () { return true; };
     if (view === 'latest') return function (r) { return r['日期'] === maxDate; };
-    if (view === '7d') { var s7 = shiftDate(maxDate, -6); return function (r) { return r['日期'] >= s7; }; }
+    if (view === '7d') { var s7 = shiftDate(maxDate, -7); return function (r) { return r['日期'] >= s7; }; }
     if (view === '30d') { var s30 = shiftDate(maxDate, -29); return function (r) { return r['日期'] >= s30; }; }
     if (view === 'custom') {
       var ns = norm(start), ne = norm(end);

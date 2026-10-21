@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import openpyxl
 
@@ -131,6 +132,20 @@ class TestPipeline(unittest.TestCase):
             self.assertEqual(["2026-08-02", "2026-08-01"], [row["日期"] for row in custom_compact_dates])
             self.assertEqual(["初中", "小学"], sorted(row["学部"] for row in xuebu_filtered))
         S.DB_PATH = original_db
+
+    def test_recent_seven_days_include_seven_days_before_latest(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(S, "DB_PATH", Path(tmp) / "test.db"), patch.object(
+            S, "SEED_DB_PATH", Path(tmp) / "missing-seed.db"
+        ):
+            pipeline.upsert_rows([
+                (f"2026-10-{day:02d}", "大神", "小学", 4.0, 4.5, 10.0, 100.0, 0.01, 10.0, 2.5, 10.0, 100.0)
+                for day in range(13, 21)
+            ])
+
+            expected = [f"2026-10-{day:02d}" for day in range(13, 21)]
+            self.assertEqual(expected, [row["日期"] for row in reversed(pipeline.fetch_filtered(view="7d"))])
+            self.assertEqual(expected, [row["日期"] for row in pipeline.fetch_cost_trend(view="7d")])
+            self.assertEqual(expected, [row["日期"] for row in pipeline.fetch_conversion_rate_trend(view="7d")])
 
     def test_fetch_cost_trend_weights_selected_modes_by_examples(self):
         original_db = S.DB_PATH

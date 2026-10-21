@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import shutil
 import sqlite3
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -334,26 +334,7 @@ def fetch_filtered(
     where = [_xuebu_in_sql()]
     params: list[Any] = list(S.XUBU_WHITELIST)
 
-    if view == "latest":
-        where.append("日期 = (SELECT MAX(日期) FROM result WHERE " + _xuebu_in_sql() + ")")
-        params += list(S.XUBU_WHITELIST)
-    elif view == "custom":
-        normalized_start = normalize_date(start)
-        normalized_end = normalize_date(end)
-        if normalized_start:
-            where.append("日期 >= ?")
-            params.append(normalized_start)
-        if normalized_end:
-            where.append("日期 <= ?")
-            params.append(normalized_end)
-    elif view in {"7d", "30d"}:
-        days = 7 if view == "7d" else 30
-        since = (datetime.now() - timedelta(days=days - 1)).strftime("%Y-%m-%d")
-        where.append("日期 >= ?")
-        params.append(since)
-    elif view and view != "all" and normalize_date(view):
-        where.append("日期 = ?")
-        params.append(normalize_date(view))
+    _apply_date_filter(where, params, view, start, end)
 
     modes = _normalize_modes(mode)
     if modes:
@@ -413,10 +394,10 @@ def _apply_date_filter(where: list[str], params: list[Any], view: str, start: st
             where.append("日期 <= ?")
             params.append(normalized_end)
     elif view in {"7d", "30d"}:
-        days = 7 if view == "7d" else 30
-        since = (datetime.now() - timedelta(days=days - 1)).strftime("%Y-%m-%d")
-        where.append("日期 >= ?")
-        params.append(since)
+        days_before_latest = 7 if view == "7d" else 29
+        where.append("日期 >= DATE((SELECT MAX(日期) FROM result WHERE " + _xuebu_in_sql() + "), ?)")
+        params.extend(S.XUBU_WHITELIST)
+        params.append(f"-{days_before_latest} days")
     elif view and view != "all" and normalize_date(view):
         where.append("日期 = ?")
         params.append(normalize_date(view))
