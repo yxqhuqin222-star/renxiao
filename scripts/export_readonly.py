@@ -21,7 +21,8 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
 
-from app import app  # noqa: E402
+from app import app, _period_sources  # noqa: E402
+from period_data import build_period_rows  # noqa: E402
 import pipeline  # noqa: E402
 from config import settings as S  # noqa: E402
 
@@ -43,6 +44,9 @@ CLIENT_JS = r"""
 (function () {
   var data = JSON.parse(document.getElementById('ro-data').textContent);
   var allRows = data.rows || [];
+  var periodRows = data.periodRows || [];
+  var periodWork = data.periodWork || [];
+  var periodRanges = data.periodRanges || [];
   var maxDate = data.maxDate;
   var costDecimals = data.costDecimals;
   var DEFAULT_TABLE = 'latest';
@@ -99,29 +103,32 @@ CLIENT_JS = r"""
       .filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
     var xuebus = Array.prototype.slice.call(form.querySelectorAll('input[type=checkbox][name$="_xuebu"]'))
       .filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
-    return { view: view, start: start, end: end, modes: modes, xuebus: xuebus };
+    var periods = Array.prototype.slice.call(form.querySelectorAll('input[type=checkbox][name$="_period"]'))
+      .filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+    return { view: view, start: start, end: end, modes: modes, xuebus: xuebus, periods: periods };
   }
 
   function filterRows(f, withXuebu) {
     var pred = datePredicate(f.view, f.start, f.end);
-    return allRows.filter(function (r) {
-      if (!pred(r)) return false;
+    return (f.periods.length ? periodRows : allRows).filter(function (r) {
+      if (f.periods.length ? f.periods.indexOf(r['流量期次']) === -1 : !pred(r)) return false;
       if (f.modes.length && f.modes.indexOf(r['流转模式']) === -1) return false;
       if (withXuebu && f.xuebus.length && f.xuebus.indexOf(r['学部']) === -1) return false;
       return true;
     });
   }
 
-  function aggregate(rows) {
+  function aggregate(rows, workforce) {
     var totalExamples = rows.reduce(function (s, r) { return s + (Number(r['单量']) || 0); }, 0);
-    if (totalExamples <= 0) {
+    if (totalExamples <= 0 && workforce == null) {
       return { efficiency: '-', target: '-', case_cost: '-', line_cost: '-', rate: '-', total_examples: '-' };
     }
-    var caseCost = rows.reduce(function (s, r) { return s + (Number(r['单例子结算成本']) || 0) * (Number(r['单量']) || 0); }, 0) / totalExamples;
-    var lineCost = rows.reduce(function (s, r) { return s + (Number(r['线路成本']) || 0) * (Number(r['单量']) || 0); }, 0) / totalExamples;
+    var missingCost = rows.some(function (r) { return Number(r['单量']) > 0 && r['单例子结算成本'] == null; });
+    var caseCost = totalExamples && !missingCost ? rows.reduce(function (s, r) { return s + (Number(r['单例子结算成本']) || 0) * (Number(r['单量']) || 0); }, 0) / totalExamples : null;
+    var lineCost = totalExamples ? rows.reduce(function (s, r) { return s + (Number(r['线路成本']) || 0) * (Number(r['单量']) || 0); }, 0) / totalExamples : null;
     var ai = rows.reduce(function (s, r) { return s + (Number(r['AI接通数']) || 0); }, 0);
     var byDayMode = {};
-    rows.forEach(function (r) {
+    (workforce == null ? rows : workforce).forEach(function (r) {
       var key = r['日期'] + '|' + r['流转模式'];
       if (!byDayMode[key]) byDayMode[key] = r;
     });
@@ -133,9 +140,9 @@ CLIENT_JS = r"""
     var targetVol = Object.keys(byDayMode).reduce(function (s, k) {
       return byDayMode[k]['人效目标'] == null ? s : s + (Number(byDayMode[k]['人效目标']) || 0) * (Number(byDayMode[k]['出勤']) || 0);
     }, 0);
-    var efficiency = att ? effVol / att : 0;
+    var efficiency = att ? effVol / att : null;
     var target = targetAtt ? targetVol / targetAtt : null;
-    var rate = ai ? totalExamples / ai : 0;
+    var rate = ai ? totalExamples / ai : null;
     return {
       efficiency: fmtNum(efficiency, 1),
       target: target == null ? '-' : fmtNum(target, 1),
@@ -146,20 +153,22 @@ CLIENT_JS = r"""
     };
   }
 
-  function aggregateByDate(rows) {
+  function aggregateByDate(rows, workforce) {
     var byDate = {};
     rows.forEach(function (r) {
       var d = r['日期'];
       (byDate[d] || (byDate[d] = [])).push(r);
     });
+    if (workforce) workforce.forEach(function(r) { byDate[r['日期']] = byDate[r['日期']] || []; });
     return Object.keys(byDate).sort().reverse().map(function (d) {
-      var agg = aggregate(byDate[d]);
+      var agg = aggregate(byDate[d], workforce == null ? null : workforce.filter(function(r) { return r['日期'] === d; }));
       agg.date = d;
       return agg;
     });
   }
 
   function viewLabel(f) {
+    if (f.periods.length) return '所选期次完整日期';
     if (f.view === 'latest') return '最新一天';
     if (f.view === 'all') return '全部历史';
     if (f.view === '7d') return '近 7 天';
@@ -168,7 +177,9 @@ CLIENT_JS = r"""
     return f.view;
   }
 
-  function renderTable(rows, f) {
+  function renderTable(rows, f, workforce) {
+    var note = document.querySelector('#results .period-note');
+    if (note) note.hidden = !f.periods.length;
     var wrap = document.querySelector('#results .table-wrap');
     if (!rows.length) {
       wrap.innerHTML = '<div class="empty"><strong>没有符合条件的结果</strong><br>调整筛选条件后重新查询。</div>';
@@ -178,6 +189,7 @@ CLIENT_JS = r"""
           '<td class="date-value">' + esc(r['日期']) + '</td>' +
           '<td><span class="pill mode">' + esc(r['流转模式']) + '</span></td>' +
           '<td><span class="pill x' + esc(r['学部']) + '">' + esc(r['学部']) + '</span></td>' +
+          (f.periods.length ? '<td>' + esc(r['流量期次']) + '</td>' : '') +
           '<td class="num">' + fmtNum(r['人效'], 1) + '</td>' +
           '<td class="num">' + fmtNum(r['人效目标'], 1) + '</td>' +
           '<td class="num">' + fmtInt(r['单量']) + '</td>' +
@@ -187,11 +199,11 @@ CLIENT_JS = r"""
           '</tr>';
       }).join('');
       wrap.innerHTML = '<table><thead><tr>' +
-        '<th>日期</th><th>流转模式</th><th>学部</th><th>人效</th><th>人效目标</th><th>单量</th>' +
+        '<th>日期</th><th>流转模式</th><th>学部</th>' + (f.periods.length ? '<th>流量期次</th>' : '') + '<th>人效</th><th>人效目标</th><th>单量</th>' +
         '<th>线路成本</th><th>单例子结算成本</th><th>接通转化率</th>' +
         '</tr></thead><tbody>' + body + '</tbody></table>';
     }
-    var agg = aggregate(rows);
+    var agg = aggregate(rows, workforce);
     var summary = document.querySelector('#results .result-summary');
     if (summary) {
       summary.innerHTML =
@@ -202,7 +214,7 @@ CLIENT_JS = r"""
         '<div class="summary-item"><span class="summary-label">单例子结算成本</span><span class="summary-value">' + agg.case_cost + '</span></div>' +
         '<div class="summary-item"><span class="summary-label">接通转化率</span><span class="summary-value">' + agg.rate + '</span></div>';
     }
-    var daily = aggregateByDate(rows);
+    var daily = aggregateByDate(rows, workforce);
     var dailyWrap = document.querySelector('#results .aggregate-table-wrap');
     if (dailyWrap) {
       if (!daily.length) {
@@ -230,32 +242,25 @@ CLIENT_JS = r"""
   }
 
   function costTrendPoints(f) {
-    var pred = datePredicate(f.view, f.start, f.end);
     var seen = {};
-    allRows.forEach(function (r) {
+    filterRows(f, true).forEach(function (r) {
       if (Number(r['单量']) <= 0) return;
-      if (!pred(r)) return;
-      if (f.modes.length && f.modes.indexOf(r['流转模式']) === -1) return;
-      if (f.xuebus.length && f.xuebus.indexOf(r['学部']) === -1) return;
       var d = r['日期'];
-      var b = seen[d] || (seen[d] = { cost: 0, vol: 0 });
+      var b = seen[d] || (seen[d] = { cost: 0, vol: 0, missing: false });
+      if (r['单例子结算成本'] == null) b.missing = true;
       b.cost += (Number(r['单例子结算成本']) || 0) * (Number(r['单量']) || 0);
       b.vol += (Number(r['单量']) || 0);
     });
-    return Object.keys(seen).sort().map(function (d) {
+    return Object.keys(seen).sort().filter(function(d) { return !seen[d].missing; }).map(function (d) {
       var b = seen[d];
       return { '日期': d, '聚合单例子结算成本': b.vol > 0 ? Number((b.cost / b.vol).toFixed(costDecimals)) : 0, '总单量': b.vol };
     });
   }
 
   function rateTrendPoints(f) {
-    var pred = datePredicate(f.view, f.start, f.end);
     var seen = {};
-    allRows.forEach(function (r) {
-      if (Number(r['单量']) <= 0) return;
-      if (!pred(r)) return;
-      if (f.modes.length && f.modes.indexOf(r['流转模式']) === -1) return;
-      if (f.xuebus.length && f.xuebus.indexOf(r['学部']) === -1) return;
+    filterRows(f, true).forEach(function (r) {
+      if (Number(r['单量']) <= 0 && !f.periods.length) return;
       var d = r['日期'];
       var b = seen[d] || (seen[d] = { vol: 0, ai: 0 });
       b.vol += Number(r['单量']) || 0;
@@ -293,7 +298,12 @@ CLIENT_JS = r"""
   function applyTable() {
     var f = readForm(document.getElementById('table-form'));
     var rows = filterRows(f, true);
-    renderTable(rows, f);
+    var work = f.periods.length ? periodWork.filter(function(r) {
+      return (!f.modes.length || f.modes.indexOf(r['流转模式']) !== -1) && periodRanges.some(function(p) {
+        return f.periods.indexOf(p.period) !== -1 && (!f.xuebus.length || f.xuebus.indexOf(p.department) !== -1) && r['日期'] >= p.start && r['日期'] <= p.end;
+      });
+    }) : null;
+    renderTable(rows, f, work);
   }
 
   function resetForm(form, defaultView) {
@@ -418,8 +428,13 @@ def main() -> None:
         html = response.get_data(as_text=True)
 
     all_rows = pipeline.fetch_filtered(view="all")
+    ranges, tongshi, zhuanhua, mubiao = _period_sources()
+    period_rows, period_work = build_period_rows(tongshi, zhuanhua, mubiao, ranges, [], sorted({p for _, p in ranges}), [])
     data = {
         "rows": all_rows,
+        "periodRows": period_rows,
+        "periodWork": period_work,
+        "periodRanges": [{"department": x, "period": p, "start": start, "end": end} for (x, p), (start, end) in ranges.items()],
         "dates": pipeline.distinct_dates(),
         "modes": pipeline.distinct_modes(),
         "xuebus": list(S.XUBU_WHITELIST),

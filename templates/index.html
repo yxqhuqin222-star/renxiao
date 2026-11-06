@@ -240,7 +240,7 @@
       background: #fff;
       box-shadow: var(--shadow);
     }
-    .date-menu {
+    .date-menu, .period-menu {
       max-height: min(260px, 45vh);
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -745,6 +745,20 @@
               </div>
             </details>
           </div>
+          <div class="field">
+            <span class="field-label">流量期次</span>
+            <details class="mode-dropdown js-mode-dropdown">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu period-menu">
+                {% for period in periods %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="chart_period" value="{{ period }}" {{ "checked" if period in chart_filters.periods else "" }}>
+                    <span>{{ period }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
           <button class="btn btn-primary" type="submit">查询</button>
           <a class="btn btn-secondary" href="{{ chart_reset_url }}#cost-trend-card" data-reset="chart">重置</a>
         </form>
@@ -840,6 +854,20 @@
               </div>
             </details>
           </div>
+          <div class="field">
+            <span class="field-label">流量期次</span>
+            <details class="mode-dropdown js-mode-dropdown">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu period-menu">
+                {% for period in periods %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="rate_chart_period" value="{{ period }}" {{ "checked" if period in rate_chart_filters.periods else "" }}>
+                    <span>{{ period }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
           <button class="btn btn-primary" type="submit">查询</button>
           <a class="btn btn-secondary" href="{{ rate_chart_reset_url }}#rate-trend-card" data-reset="rate-chart">重置</a>
         </form>
@@ -856,6 +884,7 @@
       </section>
 
       <section class="card" id="filter-card" aria-labelledby="filter-title">
+        {% if period_error %}<div role="alert">期次筛选不可用：{{ period_error }}</div>{% endif %}
         <div class="section-head">
           <div>
             <h2 class="section-title" id="filter-title">筛选</h2>
@@ -931,6 +960,20 @@
               </div>
             </details>
           </div>
+          <div class="field">
+            <span class="field-label">流量期次</span>
+            <details class="mode-dropdown js-mode-dropdown">
+              <summary><span class="mode-summary">全部</span></summary>
+              <div class="mode-menu period-menu">
+                {% for period in periods %}
+                  <label class="mode-option">
+                    <input type="checkbox" name="table_period" value="{{ period }}" {{ "checked" if period in table_filters.periods else "" }}>
+                    <span>{{ period }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
           <button class="btn btn-primary" type="submit">查询</button>
           <a class="btn btn-secondary" href="{{ table_reset_url }}#results" data-reset="table">重置</a>
         </form>
@@ -940,6 +983,7 @@
         <div class="table-head">
           <div>
             <h2 class="section-title" id="result-title">结果明细</h2>
+            <div class="period-note" {% if not table_filters.periods %}hidden{% endif %}>人效为所选期次日期内的模式整体人效；缺失数据以 — 显示。</div>
             <div class="result-count">共 <b>{{ rows|length }}</b> 行 <span>{{ view_label }}</span></div>
           </div>
           <div class="table-actions">
@@ -1023,6 +1067,7 @@
                   <th>日期</th>
                   <th>流转模式</th>
                   <th>学部</th>
+                  {% if table_filters.periods %}<th>流量期次</th>{% endif %}
                   <th>人效</th>
                   <th>人效目标</th>
                   <th>单量</th>
@@ -1037,6 +1082,7 @@
                     <td class="date-value">{{ row["日期"] }}</td>
                     <td><span class="pill mode">{{ row["流转模式"] }}</span></td>
                     <td><span class="pill x{{ row['学部'] }}">{{ row["学部"] }}</span></td>
+                    {% if table_filters.periods %}<td>{{ row["流量期次"] }}</td>{% endif %}
                     <td class="num">{{ row["人效_display"] }}</td>
                     <td class="num">{{ row["人效目标_display"] }}</td>
                     <td class="num">{{ row["单量_display"] }}</td>

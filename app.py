@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 from flask import Flask, abort, redirect, render_template, request, send_file, send_from_directory, url_for
 
 from config import settings as S
+from period_data import build_period_rows, period_ranges
 from pipeline import (
     compute_result,
     distinct_dates,
@@ -40,6 +41,7 @@ PROJECT_DIR = Path(__file__).resolve().parent
 PUBLIC_PAGES_URL = "https://yxqhuqin222-star.github.io/renxiao/"
 DEFAULT_GITHUB_PROXY = "http://127.0.0.1:21081"
 ANNOUNCEMENT_MAX_LENGTH = 5000
+PERIOD_MAPPING_PATH = PROJECT_DIR.parent.parent / "rizhuizong" / "tongji_target.xlsx"
 
 FAVICON_FILES = {
     "android-chrome-192x192.png",
@@ -216,6 +218,7 @@ def _filters_from_request(prefix: str, include_xuebu: bool = False, default_view
     }
     if include_xuebu:
         filters["xuebus"] = [xuebu for xuebu in request.values.getlist(f"{prefix}_xuebu") if xuebu]
+    filters["periods"] = [period for period in request.values.getlist(f"{prefix}_period") if period]
     return filters
 
 
@@ -228,6 +231,7 @@ def _prefixed_args(prefix: str, filters: dict[str, object]) -> list[tuple[str, o
     args.extend((f"{prefix}_mode", mode) for mode in filters["modes"])
     if "xuebus" in filters:
         args.extend((f"{prefix}_xuebu", xuebu) for xuebu in filters["xuebus"])
+    args.extend((f"{prefix}_period", period) for period in filters.get("periods", []))
     return args
 
 
@@ -339,9 +343,9 @@ def _metrics(rows: list[dict]) -> dict[str, object]:
     }
 
 
-def _table_aggregate(rows: list[dict]) -> dict[str, str]:
+def _table_aggregate(rows: list[dict], workforce: list[dict] | None = None) -> dict[str, str]:
     total_examples = sum(float(row.get("单量") or 0) for row in rows)
-    if total_examples <= 0:
+    if total_examples <= 0 and workforce is None:
         return {
             "efficiency": "-",
             "target": "-",
@@ -350,11 +354,12 @@ def _table_aggregate(rows: list[dict]) -> dict[str, str]:
             "rate": "-",
             "total_examples": "-",
         }
-    case_cost = sum(float(row.get("单例子结算成本") or 0) * float(row.get("单量") or 0) for row in rows) / total_examples
-    line_cost = sum(float(row.get("线路成本") or 0) * float(row.get("单量") or 0) for row in rows) / total_examples
+    case_cost = (sum(float(row["单例子结算成本"]) * float(row.get("单量") or 0) for row in rows if row.get("单例子结算成本") is not None) / total_examples
+                 if total_examples and all(row.get("单例子结算成本") is not None for row in rows if float(row.get("单量") or 0) > 0) else None)
+    line_cost = (sum(float(row["线路成本"]) * float(row.get("单量") or 0) for row in rows if row.get("线路成本") is not None) / total_examples if total_examples else None)
     ai_connected = sum(float(row.get("AI接通数") or 0) for row in rows)
     by_day_mode = {}
-    for row in rows:
+    for row in rows if workforce is None else workforce:
         key = (row["日期"], row["流转模式"])
         by_day_mode.setdefault(key, row)
     total_attendance = sum(float(row.get("出勤") or 0) for row in by_day_mode.values())
@@ -375,14 +380,17 @@ def _table_aggregate(rows: list[dict]) -> dict[str, str]:
     }
 
 
-def _table_daily_aggregates(rows: list[dict]) -> list[dict[str, str]]:
+def _table_daily_aggregates(rows: list[dict], workforce: list[dict] | None = None) -> list[dict[str, str]]:
     by_date: dict[str, list[dict]] = {}
     for row in rows:
         by_date.setdefault(str(row["日期"]), []).append(row)
+    if workforce is not None:
+        for row in workforce:
+            by_date.setdefault(str(row["日期"]), [])
     return [
         {
             "date": day,
-            **_table_aggregate(day_rows),
+            **_table_aggregate(day_rows, None if workforce is None else [r for r in workforce if r['日期'] == day]),
         }
         for day, day_rows in sorted(by_date.items(), reverse=True)
     ]
@@ -532,11 +540,63 @@ def _recalculate_fixed_data() -> tuple[bool, str]:
     return True, f"已自动重算 {len(rows)} 行，跳过 {len(skipped)} 行。"
 
 
+def _period_sources():
+    paths = (PERIOD_MAPPING_PATH, S.FIXED_TONGSHI_PATH, S.FIXED_ZHUANHUA_PATH, S.FIXED_MUBIAO_PATH)
+    missing = [str(path) for path in paths if not path.exists()]
+    if missing:
+        raise ValueError("期次数据文件缺失：" + "、".join(missing))
+    mapping, tongshi, zhuanhua, mubiao = (load_sheet(path) for path in paths)
+    for name, data, required in (
+        ("期次映射表", mapping, {"学部", "期次", "进量日期", "target_time"}),
+        ("tongshi", tongshi, S.TONGSHI_REQUIRED | {"流量期次"}),
+        ("zhuanhua", zhuanhua, S.ZHUANHUA_REQUIRED),
+        ("人效目标", mubiao, S.MUBIAO_REQUIRED),
+    ):
+        missing_headers = validate_headers(data, required)
+        if missing_headers:
+            raise ValueError(f"{name}缺少字段：" + "、".join(missing_headers))
+    ranges = period_ranges(mapping)
+    if not ranges:
+        raise ValueError("期次映射表没有小学、初中或高中的日期区间")
+    return ranges, tongshi, zhuanhua, mubiao
+
+
+def _period_query(filters, sources):
+    ranges, tongshi, zhuanhua, mubiao = sources
+    return build_period_rows(tongshi, zhuanhua, mubiao, ranges, filters['xuebus'], filters['periods'], filters['modes'])
+
+
+def _period_trend(rows, rate=False):
+    days = {}
+    for row in rows:
+        examples = float(row['单量'] or 0)
+        if examples <= 0 and not rate:
+            continue
+        entry = days.setdefault(row['日期'], {'examples': 0., 'ai': 0., 'cost': 0., 'missing': False})
+        entry['examples'] += examples
+        entry['ai'] += float(row['AI接通数'] or 0)
+        if row['单例子结算成本'] is None:
+            entry['missing'] = True
+        else:
+            entry['cost'] += row['单例子结算成本'] * examples
+    if rate:
+        return [{'日期': d, '聚合接通转化率': round(v['examples'] / v['ai'], 6), '总单量': v['examples'], '总AI接通数': v['ai']} for d, v in sorted(days.items()) if v['ai']]
+    return [{'日期': d, '聚合单例子结算成本': round(v['cost'] / v['examples'], S.COST_DECIMALS), '总单量': v['examples']} for d, v in sorted(days.items()) if not v['missing']]
+
+
 @app.route("/", methods=["GET"])
 def index():
     chart_filters = _filters_from_request("chart", include_xuebu=True, default_view="7d")
     rate_chart_filters = _filters_from_request("rate_chart", include_xuebu=True, default_view="7d")
     table_filters = _filters_from_request("table", include_xuebu=True, default_view="latest")
+    period_error = None
+    try:
+        sources = _period_sources()
+        periods = sorted({period for _, period in sources[0]})
+    except (OSError, ValueError) as exc:
+        sources, periods, period_error = None, [], str(exc)
+        if chart_filters['periods'] or rate_chart_filters['periods'] or table_filters['periods']:
+            abort(503, description=period_error)
     all_modes = distinct_modes()
     current_latest_date = latest_date()
     rows = fetch_filtered(
@@ -561,6 +621,15 @@ def index():
         mode=rate_chart_filters["modes"],
         xuebu=rate_chart_filters["xuebus"],
     )
+    workforce = None
+    if table_filters['periods']:
+        rows, workforce = _period_query(table_filters, sources)
+    if chart_filters['periods']:
+        chart_rows, _ = _period_query(chart_filters, sources)
+        trend = _period_trend(chart_rows)
+    if rate_chart_filters['periods']:
+        rate_rows, _ = _period_query(rate_chart_filters, sources)
+        rate_trend = _period_trend(rate_rows, rate=True)
     formatted_rows = []
     for row in rows:
         item = dict(row)
@@ -576,11 +645,13 @@ def index():
         "index.html",
         rows=formatted_rows,
         metrics=_metrics(rows),
-        table_aggregate=_table_aggregate(rows),
-        table_daily_aggregates=_table_daily_aggregates(rows),
+        table_aggregate=_table_aggregate(rows, workforce),
+        table_daily_aggregates=_table_daily_aggregates(rows, workforce),
         dates=distinct_dates(),
         modes=all_modes,
         xuebus=S.XUBU_WHITELIST,
+        periods=periods,
+        period_error=period_error,
         latest_date=current_latest_date,
         announcements=_announcements(),
         readonly=request.args.get("readonly") == "1",
@@ -593,7 +664,7 @@ def index():
         table_preserve_args=_template_preserve_args("chart", chart_filters) + _template_preserve_args("rate_chart", rate_chart_filters),
         trend=trend,
         rate_trend=rate_trend,
-        view_label=_view_label(table_filters),
+        view_label="所选期次完整日期" if table_filters['periods'] else _view_label(table_filters),
         download_url=_download_url(table_filters),
         chart_reset_url=_url_with_filters(("chart", _default_filters(include_xuebu=True)), ("rate_chart", rate_chart_filters), ("table", table_filters)),
         rate_chart_reset_url=_url_with_filters(("chart", chart_filters), ("rate_chart", _default_filters(include_xuebu=True)), ("table", table_filters)),
@@ -723,6 +794,8 @@ def download():
         mode=filters["modes"],
         xuebu=filters["xuebus"],
     )
+    if filters.get('periods'):
+        rows, _ = _period_query(filters, _period_sources())
     return send_file(
         generate_result_xlsx(rows),
         as_attachment=True,

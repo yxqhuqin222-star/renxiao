@@ -509,17 +509,20 @@ def generate_result_xlsx(rows: list[dict[str, Any] | tuple[Any, ...]]) -> io.Byt
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Sheet1"
-    ws.append(S.RESULT_HEADERS)
+    headers = list(S.RESULT_HEADERS)
+    if any(isinstance(row, dict) and "流量期次" in row for row in rows):
+        headers.insert(3, "流量期次")
+    ws.append(headers)
     for cell in ws[1]:
         cell.font = openpyxl.styles.Font(bold=True)
     for row in rows:
         if isinstance(row, dict):
-            ws.append([_export_value(key, row.get(key)) for key in S.RESULT_HEADERS])
+            ws.append([_export_value(key, row.get(key)) for key in headers])
         else:
             ws.append([_export_value(key, value) for key, value in zip(S.RESULT_HEADERS, row)])
     for col, width in zip("ABCDEFGHI", [14, 16, 10, 10, 10, 10, 14, 18, 14]):
         ws.column_dimensions[col].width = width
-    ws.auto_filter.ref = f"A1:I{max(ws.max_row, 1)}"
+    ws.auto_filter.ref = f"A1:{openpyxl.utils.get_column_letter(len(headers))}{max(ws.max_row, 1)}"
     ws.freeze_panes = "A2"
     buf = io.BytesIO()
     wb.save(buf)
