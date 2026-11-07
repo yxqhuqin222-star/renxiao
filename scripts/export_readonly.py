@@ -292,7 +292,7 @@ CLIENT_JS = r"""
     chartBox.dataset.points = JSON.stringify(pts);
     if (typeof window.renderRateTrendChart === 'function') window.renderRateTrendChart();
     var el = document.getElementById('rate-trend-latest');
-    if (el) el.textContent = pts.length ? (Number(pts[pts.length - 1]['聚合接通转化率']) * 100).toFixed(1) + '%' : '-';
+    if (el) el.textContent = pts.length ? (Number(pts[pts.length - 1]['聚合接通转化率']) * 100).toFixed(2) + '%' : '-';
   }
 
   function applyTable() {
