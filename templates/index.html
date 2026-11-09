@@ -245,6 +245,27 @@
       overflow-y: auto;
       overscroll-behavior: contain;
     }
+    .mode-actions {
+      position: sticky;
+      top: -8px;
+      z-index: 1;
+      display: flex;
+      gap: 8px;
+      padding: 0 0 7px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .mode-action {
+      padding: 5px 8px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--primary);
+      font: inherit;
+      cursor: pointer;
+    }
+    .mode-action:hover { background: var(--primary-soft); }
     .mode-option {
       display: flex;
       align-items: center;
@@ -1170,10 +1191,20 @@
     document.querySelectorAll(".js-mode-dropdown").forEach((dropdown) => {
       const summary = dropdown.querySelector(".mode-summary");
       const inputs = Array.from(dropdown.querySelectorAll("input[type='checkbox']"));
+      const actions = document.createElement("div");
+      actions.className = "mode-actions";
+      actions.innerHTML = '<button class="mode-action" type="button" data-select-all>全选</button><button class="mode-action" type="button" data-clear>清空</button>';
+      dropdown.querySelector(".mode-menu").prepend(actions);
       const refresh = () => {
         const selected = inputs.filter((input) => input.checked).map((input) => input.value);
         summary.textContent = selected.length === 0 ? "全部" : selected.length <= 2 ? selected.join("、") : `已选 ${selected.length} 项`;
       };
+      actions.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        inputs.forEach((input) => { input.checked = button.hasAttribute("data-select-all"); });
+        refresh();
+      });
       inputs.forEach((input) => input.addEventListener("change", refresh));
       refresh();
     });
