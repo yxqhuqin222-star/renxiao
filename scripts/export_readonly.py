@@ -326,7 +326,7 @@ CLIENT_JS = r"""
     });
     form.querySelectorAll('.js-mode-dropdown').forEach(function (dd) {
       var sum = dd.querySelector('.mode-summary');
-      if (sum) sum.textContent = '全部';
+      if (sum) sum.textContent = dd.dataset.emptyLabel || '全部';
     });
   }
 

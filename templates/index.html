@@ -768,8 +768,8 @@
           </div>
           <div class="field">
             <span class="field-label">流量期次</span>
-            <details class="mode-dropdown js-mode-dropdown">
-              <summary><span class="mode-summary">全部</span></summary>
+            <details class="mode-dropdown js-mode-dropdown" data-empty-label="未选择">
+              <summary><span class="mode-summary">未选择</span></summary>
               <div class="mode-menu period-menu">
                 {% for period in periods %}
                   <label class="mode-option">
@@ -877,8 +877,8 @@
           </div>
           <div class="field">
             <span class="field-label">流量期次</span>
-            <details class="mode-dropdown js-mode-dropdown">
-              <summary><span class="mode-summary">全部</span></summary>
+            <details class="mode-dropdown js-mode-dropdown" data-empty-label="未选择">
+              <summary><span class="mode-summary">未选择</span></summary>
               <div class="mode-menu period-menu">
                 {% for period in periods %}
                   <label class="mode-option">
@@ -983,8 +983,8 @@
           </div>
           <div class="field">
             <span class="field-label">流量期次</span>
-            <details class="mode-dropdown js-mode-dropdown">
-              <summary><span class="mode-summary">全部</span></summary>
+            <details class="mode-dropdown js-mode-dropdown" data-empty-label="未选择">
+              <summary><span class="mode-summary">未选择</span></summary>
               <div class="mode-menu period-menu">
                 {% for period in periods %}
                   <label class="mode-option">
@@ -1197,7 +1197,7 @@
       dropdown.querySelector(".mode-menu").prepend(actions);
       const refresh = () => {
         const selected = inputs.filter((input) => input.checked).map((input) => input.value);
-        summary.textContent = selected.length === 0 ? "全部" : selected.length <= 2 ? selected.join("、") : `已选 ${selected.length} 项`;
+        summary.textContent = selected.length === 0 ? (dropdown.dataset.emptyLabel || "全部") : selected.length <= 2 ? selected.join("、") : `已选 ${selected.length} 项`;
       };
       actions.addEventListener("click", (event) => {
         const button = event.target.closest("button");
